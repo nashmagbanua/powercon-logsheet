@@ -17,26 +17,7 @@ function updateTotals() {
   });
 }
 
-// Save current readings (end) to localStorage
-function saveCurrentReadings() {
-  const rows = document.querySelectorAll("tbody tr");
-  rows.forEach((row, index) => {
-    const endInput = row.querySelector(".end");
-    const endValue = parseFloat(endInput.value);
-    if (!isNaN(endValue)) {
-      localStorage.setItem(`equip-${index}-prev`, endValue);
-    }
-  });
-
-  // Feedback UI
-  const status = document.getElementById("saveStatus");
-  if (status) {
-    status.textContent = "✔ Saved!";
-    setTimeout(() => status.textContent = "", 3000);
-  }
-}
-
-// Load previous readings (as today’s initial) from localStorage
+// 🔁 Auto-load previous "end" readings as today's "start"
 function loadPreviousReadings() {
   const rows = document.querySelectorAll("tbody tr");
   rows.forEach((row, index) => {
@@ -48,21 +29,71 @@ function loadPreviousReadings() {
   });
 }
 
+// 💾 Manual save button logic
+function saveCurrentReadings() {
+  const rows = document.querySelectorAll("tbody tr");
+  let hasEmpty = false;
+
+  rows.forEach((row, index) => {
+    const endInput = row.querySelector(".end");
+    const value = parseFloat(endInput.value);
+
+    if (endInput.value === "") {
+      hasEmpty = true;
+    }
+
+    if (!isNaN(value)) {
+      localStorage.setItem(`equip-${index}-prev`, value);
+    }
+  });
+
+  if (hasEmpty) {
+    const confirmSave = confirm("You left some fields empty. Do you want to continue saving?");
+    if (!confirmSave) return;
+  }
+
+  const status = document.getElementById("saveStatus");
+  if (status) {
+    status.textContent = "✔ Your readings have been saved!";
+    setTimeout(() => status.textContent = "", 4000);
+  }
+}
+
+// ✅ Real-time auto-save + green flash
+document.addEventListener("input", function (e) {
+  if (e.target.classList.contains("start") || e.target.classList.contains("end")) {
+    updateTotals();
+
+    // Only auto-save on "end" fields
+    if (e.target.classList.contains("end")) {
+      const row = e.target.closest("tr");
+      const rows = Array.from(document.querySelectorAll("tbody tr"));
+      const rowIndex = rows.indexOf(row);
+      const value = parseFloat(e.target.value);
+
+      if (!isNaN(value)) {
+        localStorage.setItem(`equip-${rowIndex}-prev`, value);
+
+        // 🟢 Visual feedback: flash green border
+        e.target.style.borderColor = "#4CAF50";
+        setTimeout(() => {
+          e.target.style.borderColor = "#ccc";
+        }, 800);
+      }
+    }
+  }
+});
+
+// ✅ Load previous values + totals on startup
 document.addEventListener("DOMContentLoaded", () => {
   loadPreviousReadings();
   updateTotals();
 });
 
-document.addEventListener("input", function (e) {
-  if (e.target.classList.contains("start") || e.target.classList.contains("end")) {
-    updateTotals();
-  }
-});
-
-// Optional: also auto-save on close
+// ✅ Save again on page close (safety)
 window.addEventListener("beforeunload", saveCurrentReadings);
 
-// Manual save button
+// ✅ Hook to save button (if present)
 const saveBtn = document.getElementById("saveBtn");
 if (saveBtn) {
   saveBtn.addEventListener("click", saveCurrentReadings);
