@@ -5,6 +5,7 @@ const FILES_TO_CACHE = [
   '/style.css',
   '/script.js',
   '/manifest.json',
+   '/version.json',
   '/abnlogo.png'
 ];
 
