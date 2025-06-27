@@ -1,12 +1,19 @@
-/* Base styles */
+/* Reset & Base styles */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
 body {
   font-family: 'Inter', sans-serif;
   background-color: #f5f5f5;
-  margin: 0;
-  padding-top: 80px; /* space for fixed header */
   color: #333;
+  padding-top: 80px; /* space for fixed header */
+  line-height: 1.5;
 }
 
+/* Header */
 header.app-header {
   position: fixed;
   top: 0;
@@ -15,111 +22,128 @@ header.app-header {
   background: #ffffff;
   display: flex;
   align-items: center;
-  padding: 10px 20px;
+  padding: 10px 16px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   z-index: 1000;
 }
 
 header.app-header .logo {
-  height: 40px;
-  margin-right: 15px;
+  height: 36px;
+  margin-right: 10px;
 }
 
 header.app-header h1 {
-  font-size: 20px;
-  margin: 0;
+  font-size: 16px;
   font-weight: 600;
+  margin: 0;
 }
 
 /* Container */
 .container {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 20px;
+  max-width: 100%;
+  padding: 15px;
 }
 
 /* Header Form */
 .header-form {
   display: flex;
-  flex-wrap: wrap;
-  gap: 15px;
-  margin-bottom: 25px;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
 }
 
 .header-form label {
-  display: flex;
-  flex-direction: column;
   font-weight: 600;
-}
-
-/* Section Styles */
-.section {
-  background: #ffffff;
-  border-radius: 10px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
-  padding: 15px;
-  margin-bottom: 30px;
-}
-
-.section h2 {
-  font-size: 18px;
-  font-weight: 600;
-  margin-top: 0;
-  margin-bottom: 10px;
-  border-left: 4px solid #4CAF50;
-  padding-left: 10px;
-}
-
-/* Table Styles */
-table {
-  width: 100%;
-  border-collapse: collapse;
   font-size: 14px;
 }
 
-th, td {
-  text-align: left;
-  padding: 8px;
-  border-bottom: 1px solid #ddd;
-}
-
-th {
-  background-color: #eaeaea;
-  font-weight: 600;
-}
-
-input[type="number"],
-input[type="text"],
-input[type="date"] {
+.header-form input {
   padding: 6px 8px;
   font-size: 14px;
   border: 1px solid #ccc;
   border-radius: 6px;
   width: 100%;
-  box-sizing: border-box;
+  margin-top: 4px;
 }
 
+/* Section Cards */
+.section {
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  padding: 15px;
+  margin-bottom: 24px;
+}
+
+.section h2 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  border-left: 4px solid #4CAF50;
+  padding-left: 10px;
+}
+
+/* Table Styling */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 14px;
+}
+
+th, td {
+  text-align: left;
+  padding: 6px;
+  border-bottom: 1px solid #ddd;
+  word-wrap: break-word;
+}
+
+th {
+  background-color: #eaeaea;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+td input {
+  padding: 5px 6px;
+  font-size: 14px;
+  width: 100%;
+  max-width: 100%;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+/* Total Output */
 .total {
   font-weight: bold;
   display: inline-block;
   min-width: 40px;
+  font-size: 14px;
 }
 
-/* Responsive Adjustments */
-@media screen and (max-width: 600px) {
-  .header-form {
-    flex-direction: column;
+/* Responsive overrides for larger screens */
+@media screen and (min-width: 700px) {
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 25px;
   }
 
-  th, td {
-    font-size: 13px;
+  .header-form {
+    flex-direction: row;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+
+  .header-form label {
+    width: 30%;
   }
 
   header.app-header h1 {
-    font-size: 16px;
+    font-size: 18px;
   }
 
   .section h2 {
-    font-size: 16px;
+    font-size: 18px;
   }
 }
