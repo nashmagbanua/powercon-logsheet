@@ -98,3 +98,18 @@ const saveBtn = document.getElementById("saveBtn");
 if (saveBtn) {
   saveBtn.addEventListener("click", saveCurrentReadings);
 }
+
+// ✅ Auto-update copyright year
+document.getElementById("currentYear").textContent = new Date().getFullYear();
+
+// ✅ Auto-load version number from version.json
+fetch("version.json")
+  .then(res => res.json())
+  .then(data => {
+    const version = data.version || "v1.0.0";
+    document.getElementById("appVersion").textContent = version;
+  })
+  .catch(err => {
+    console.warn("⚠ Failed to fetch version:", err);
+    document.getElementById("appVersion").textContent = "v?";
+  });
