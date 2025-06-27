@@ -1,4 +1,3 @@
-// Auto-calculate total (kWh used) for every row
 function updateTotals() {
   const rows = document.querySelectorAll("tbody tr");
   rows.forEach(row => {
@@ -18,12 +17,53 @@ function updateTotals() {
   });
 }
 
-// Listen for input changes
+// Save current readings (end) to localStorage
+function saveCurrentReadings() {
+  const rows = document.querySelectorAll("tbody tr");
+  rows.forEach((row, index) => {
+    const endInput = row.querySelector(".end");
+    const endValue = parseFloat(endInput.value);
+    if (!isNaN(endValue)) {
+      localStorage.setItem(`equip-${index}-prev`, endValue);
+    }
+  });
+
+  // Feedback UI
+  const status = document.getElementById("saveStatus");
+  if (status) {
+    status.textContent = "✔ Saved!";
+    setTimeout(() => status.textContent = "", 3000);
+  }
+}
+
+// Load previous readings (as today’s initial) from localStorage
+function loadPreviousReadings() {
+  const rows = document.querySelectorAll("tbody tr");
+  rows.forEach((row, index) => {
+    const prevValue = localStorage.getItem(`equip-${index}-prev`);
+    if (prevValue !== null) {
+      const startInput = row.querySelector(".start");
+      startInput.value = prevValue;
+    }
+  });
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  loadPreviousReadings();
+  updateTotals();
+});
+
 document.addEventListener("input", function (e) {
   if (e.target.classList.contains("start") || e.target.classList.contains("end")) {
     updateTotals();
   }
 });
 
-// Optional: run once on load to initialize totals
-window.addEventListener("DOMContentLoaded", updateTotals);
+// Optional: also auto-save on close
+window.addEventListener("beforeunload", saveCurrentReadings);
+
+// Manual save button
+const saveBtn = document.getElementById("saveBtn");
+if (saveBtn) {
+  saveBtn.addEventListener("click", saveCurrentReadings);
+}
