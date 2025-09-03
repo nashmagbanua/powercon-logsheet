@@ -177,6 +177,7 @@ async function loadPreviousReadings() {
       const equipmentName = row.querySelector('td:first-child').textContent.trim();
       const startInput = row.querySelector('.start');
 
+      // Kunin ang latest end_reading para sa bawat equipment
       const { data, error } = await supabase
         .from(section.table)
         .select('end_reading')
@@ -184,7 +185,7 @@ async function loadPreviousReadings() {
         .eq('equipment', equipmentName)
         .order('created_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle(); // ✅ mas safe kaysa single()
 
       if (!error && data) {
         startInput.value = data.end_reading;
@@ -197,7 +198,6 @@ async function loadPreviousReadings() {
   updateTotals();
   alert('Previous readings loaded!');
 }
-
 // --- Event Listeners ---
 
 document.addEventListener("DOMContentLoaded", () => {
