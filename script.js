@@ -113,9 +113,10 @@ async function saveCurrentReadings() {
   }
 
   const currentDate = new Date().toISOString().slice(0, 10);
-  let allRows = [];
+  let inserts = [];
   let hasEmpty = false;
 
+  // Kolektahin lahat ng rows per section
   sections.forEach(section => {
     const rows = document.querySelectorAll(`${section.selector} tbody tr`);
     const equipmentNames = Array.from(rows).map(row => row.querySelector('td:first-child').textContent.trim());
@@ -129,15 +130,16 @@ async function saveCurrentReadings() {
         hasEmpty = true;
       }
 
-      allRows.push({
-        table: section.table,
+      const rowData = {
         lastname: currentUserLastname,
         date: currentDate,
         equipment: equipmentNames[index],
         start_reading: parseFloat(startInput.value) || null,
         end_reading: parseFloat(endInput.value) || null,
         total_kwh: parseFloat(totalSpan.textContent) || null
-      });
+      };
+
+      inserts.push({ table: section.table, rowData });
     });
   });
 
@@ -146,38 +148,49 @@ async function saveCurrentReadings() {
     if (!confirmSave) return;
   }
 
-  for (const rowData of allRows) {
-    await supabase.from(rowData.table).insert(rowData);
+  // Counter para sa success/error
+  let successCount = 0;
+  let errorCount = 0;
+
+  for (const { table, rowData } of inserts) {
+    const { error } = await supabase.from(table).insert(rowData);
+    if (error) {
+      console.error(`❌ Insert error on ${table}:`, error.message, rowData);
+      errorCount++;
+    } else {
+      console.log(`✅ Inserted into ${table}:`, rowData);
+      successCount++;
+    }
   }
 
-  alert("Your readings have been saved to the database!");
+  alert(`Save complete!\n\n✅ Success: ${successCount}\n❌ Errors: ${errorCount}`);
 }
 
 async function loadPreviousReadings() {
   const currentUserLastname = localStorage.getItem('currentUserLastname');
-  if (!currentUserLastname) {
-    return;
-  }
+  if (!currentUserLastname) return;
 
   for (const section of sections) {
-    const { data, error } = await supabase
-      .from(section.table)
-      .select('equipment, end_reading')
-      .eq('lastname', currentUserLastname)
-      .order('created_at', { ascending: false });
+    const rows = document.querySelectorAll(`${section.selector} tbody tr`);
 
-    if (!error && data) {
-      const rows = document.querySelectorAll(`${section.selector} tbody tr`);
-      rows.forEach(row => {
-        const startInput = row.querySelector('.start');
-        const equipmentName = row.querySelector('td:first-child').textContent.trim();
-        const latestReading = data.find(item => item.equipment === equipmentName);
-        if (latestReading) {
-          startInput.value = latestReading.end_reading;
-        } else {
-          startInput.value = '';
-        }
-      });
+    for (const row of rows) {
+      const equipmentName = row.querySelector('td:first-child').textContent.trim();
+      const startInput = row.querySelector('.start');
+
+      const { data, error } = await supabase
+        .from(section.table)
+        .select('end_reading')
+        .eq('lastname', currentUserLastname)
+        .eq('equipment', equipmentName)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (!error && data) {
+        startInput.value = data.end_reading;
+      } else {
+        startInput.value = '';
+      }
     }
   }
 
