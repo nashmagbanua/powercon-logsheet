@@ -1,50 +1,114 @@
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+
+// Supabase credentials (dito mo ilalagay)
+const SUPABASE_URL = 'https://qbeacrpoyfacgmbzxjcu.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFiZWFjcnBveWZhY2dtYnp4amN1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg2NTM5NTIsImV4cCI6MjA2NDIyOTk1Mn0.6kfxKLJxidW4BcqsMJte61AtzydrTW-1ZJIJytiUBt4';
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// Mga global variables para sa mga equipment at table names
+const sections = [
+  { name: 'Utilities', table: 'utilities_readings', selector: '.section:nth-of-type(1) table' },
+  { name: 'Process', table: 'process_readings', selector: '.section:nth-of-type(2) table' },
+  { name: 'Bottling', table: 'bottling_readings', selector: '.section:nth-of-type(3) table' },
+  { name: 'LVSG 5 Loads', table: 'lvsg5loads_readings', selector: '.section:nth-of-type(4) table' }
+];
+
+// --- Authentication Logic ---
+
+async function handleLogin() {
+  const passcode = document.getElementById('passcode-input').value;
+  const currentMonth = (new Date().getMonth() + 1).toString().padStart(2, '0');
+  const currentDay = new Date().getDate().toString().padStart(2, '0');
+  const currentDateCode = currentMonth + currentDay;
+
+  const lastname = passcode.substring(0, passcode.length - 4).toLowerCase();
+  const passcodeDate = passcode.substring(passcode.length - 4);
+
+  if (passcodeDate !== currentDateCode) {
+    alert('Incorrect date format in passcode. Please use the current date.');
+    return;
+  }
+
+  const { data, error } = await supabase
+    .from('authorized_users')
+    .select('lastname')
+    .eq('lastname', lastname)
+    .single();
+
+  if (error || !data) {
+    alert('Invalid lastname. Access denied.');
+    return;
+  }
+
+  // Save user state and show the main app
+  localStorage.setItem('currentUser', data.lastname);
+  document.getElementById('operator-name').textContent = data.lastname.toUpperCase();
+  document.getElementById('login-form').style.display = 'none';
+  document.getElementById('app-content').style.display = 'block';
+
+  // Load data from Supabase after successful login
+  await loadPreviousReadings();
+  updateTotals();
+}
+
+// --- Main Application Logic ---
+
 function updateTotals() {
-  const rows = document.querySelectorAll("tbody tr");
-  rows.forEach(row => {
-    const startInput = row.querySelector(".start");
-    const endInput = row.querySelector(".end");
-    const totalSpan = row.querySelector(".total");
-
-    const start = parseFloat(startInput.value);
-    const end = parseFloat(endInput.value);
-
-    if (!isNaN(start) && !isNaN(end)) {
-      const total = end - start;
-      totalSpan.textContent = total >= 0 ? total.toFixed(2) : "0.00";
-    } else {
-      totalSpan.textContent = "0";
-    }
-  });
-}
-
-// 🔁 Auto-load previous "end" readings as today's "start"
-function loadPreviousReadings() {
-  const rows = document.querySelectorAll("tbody tr");
-  rows.forEach((row, index) => {
-    const prevValue = localStorage.getItem(`equip-${index}-prev`);
-    if (prevValue !== null) {
+  sections.forEach(section => {
+    const rows = document.querySelectorAll(`${section.selector} tbody tr`);
+    rows.forEach(row => {
       const startInput = row.querySelector(".start");
-      startInput.value = prevValue;
-    }
+      const endInput = row.querySelector(".end");
+      const totalSpan = row.querySelector(".total");
+
+      const start = parseFloat(startInput.value);
+      const end = parseFloat(endInput.value);
+
+      if (!isNaN(start) && !isNaN(end)) {
+        const total = end - start;
+        totalSpan.textContent = total >= 0 ? total.toFixed(2) : "0.00";
+      } else {
+        totalSpan.textContent = "0";
+      }
+    });
   });
 }
 
-// 💾 Manual save button logic
-function saveCurrentReadings() {
-  const rows = document.querySelectorAll("tbody tr");
+async function saveCurrentReadings() {
+  const currentUserLastname = localStorage.getItem('currentUser');
+  if (!currentUserLastname) {
+    alert('You are not logged in.');
+    return;
+  }
+
+  const currentDate = new Date().toISOString().slice(0, 10);
+  let allRows = [];
   let hasEmpty = false;
 
-  rows.forEach((row, index) => {
-    const endInput = row.querySelector(".end");
-    const value = parseFloat(endInput.value);
+  sections.forEach(section => {
+    const rows = document.querySelectorAll(`${section.selector} tbody tr`);
+    const equipmentNames = Array.from(rows).map(row => row.querySelector('td:first-child').textContent.trim());
 
-    if (endInput.value === "") {
-      hasEmpty = true;
-    }
+    rows.forEach((row, index) => {
+      const startInput = row.querySelector(".start");
+      const endInput = row.querySelector(".end");
+      const totalSpan = row.querySelector(".total");
 
-    if (!isNaN(value)) {
-      localStorage.setItem(`equip-${index}-prev`, value);
-    }
+      if (startInput.value === "" || endInput.value === "") {
+        hasEmpty = true;
+      }
+
+      allRows.push({
+        table: section.table,
+        lastname: currentUserLastname,
+        date: currentDate,
+        equipment: equipmentNames[index],
+        start_reading: parseFloat(startInput.value) || null,
+        end_reading: parseFloat(endInput.value) || null,
+        total_kwh: parseFloat(totalSpan.textContent) || null
+      });
+    });
   });
 
   if (hasEmpty) {
@@ -52,64 +116,97 @@ function saveCurrentReadings() {
     if (!confirmSave) return;
   }
 
-  const status = document.getElementById("saveStatus");
-  if (status) {
-    status.textContent = "✔ Your readings have been saved!";
-    setTimeout(() => status.textContent = "", 4000);
+  // I-save ang lahat ng data sa Supabase
+  for (const rowData of allRows) {
+    await supabase.from(rowData.table).insert(rowData);
   }
+
+  alert("Your readings have been saved to the database!");
 }
 
-// ✅ Real-time auto-save + green flash
-document.addEventListener("input", function (e) {
-  if (e.target.classList.contains("start") || e.target.classList.contains("end")) {
-    updateTotals();
+async function loadPreviousReadings() {
+  const currentUserLastname = localStorage.getItem('currentUser');
+  if (!currentUserLastname) {
+    return; // Don't try to load if not logged in
+  }
 
-    // Only auto-save on "end" fields
-    if (e.target.classList.contains("end")) {
-      const row = e.target.closest("tr");
-      const rows = Array.from(document.querySelectorAll("tbody tr"));
-      const rowIndex = rows.indexOf(row);
-      const value = parseFloat(e.target.value);
+  for (const section of sections) {
+    const { data, error } = await supabase
+      .from(section.table)
+      .select('equipment, end_reading')
+      .eq('lastname', currentUserLastname)
+      .order('created_at', { ascending: false });
 
-      if (!isNaN(value)) {
-        localStorage.setItem(`equip-${rowIndex}-prev`, value);
-
-        // 🟢 Visual feedback: flash green border
-        e.target.style.borderColor = "#4CAF50";
-        setTimeout(() => {
-          e.target.style.borderColor = "#ccc";
-        }, 800);
-      }
+    if (!error && data) {
+      const rows = document.querySelectorAll(`${section.selector} tbody tr`);
+      rows.forEach(row => {
+        const startInput = row.querySelector('.start');
+        const equipmentName = row.querySelector('td:first-child').textContent.trim();
+        const latestReading = data.find(item => item.equipment === equipmentName);
+        if (latestReading) {
+          startInput.value = latestReading.end_reading;
+        } else {
+          startInput.value = '';
+        }
+      });
     }
   }
-});
 
-// ✅ Load previous values + totals on startup
-document.addEventListener("DOMContentLoaded", () => {
-  loadPreviousReadings();
   updateTotals();
-});
-
-// ✅ Save again on page close (safety)
-window.addEventListener("beforeunload", saveCurrentReadings);
-
-// ✅ Hook to save button (if present)
-const saveBtn = document.getElementById("saveBtn");
-if (saveBtn) {
-  saveBtn.addEventListener("click", saveCurrentReadings);
+  alert('Previous readings loaded!');
 }
 
-// ✅ Auto-update copyright year
+// --- Event Listeners ---
+
+document.addEventListener("DOMContentLoaded", () => {
+  // Check if user is already logged in
+  const currentUser = localStorage.getItem('currentUser');
+  if (currentUser) {
+    document.getElementById('login-form').style.display = 'none';
+    document.getElementById('app-content').style.display = 'block';
+    document.getElementById('operator-name').textContent = currentUser.toUpperCase();
+    loadPreviousReadings();
+  }
+
+  // Set today's date
+  document.getElementById('date-input').valueAsDate = new Date();
+});
+
+// Listener for all number inputs to update totals
+document.addEventListener("input", function (e) {
+  if (e.target.closest('td') && e.target.closest('td').previousElementSibling) {
+    updateTotals();
+  }
+});
+
+// Event listener for the Login button
+document.getElementById('login-btn').addEventListener('click', handleLogin);
+
+// Event listener for the Save button
+document.getElementById('save-btn').addEventListener('click', saveCurrentReadings);
+
+// Event listener for the Reload button
+document.getElementById('reload-btn').addEventListener('click', loadPreviousReadings);
+
+// Auto-update copyright year
 document.getElementById("currentYear").textContent = new Date().getFullYear();
 
-// ✅ Auto-load version number from version.json
-fetch("version.json")
-  .then(res => res.json())
-  .then(data => {
-    const version = data.version || "v1.0.0";
-    document.getElementById("appVersion").textContent = version;
-  })
-  .catch(err => {
-    console.warn("⚠ Failed to fetch version:", err);
-    document.getElementById("appVersion").textContent = "v?";
-  });
+// Disclaimer logic (from your original code)
+function closeDisclaimer() {
+  localStorage.setItem("disclaimerAcknowledged", "true");
+  document.getElementById("disclaimerModal").style.display = "none";
+}
+
+function showDisclaimer() {
+  document.getElementById("disclaimerModal").style.display = "flex";
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+  if (!localStorage.getItem("disclaimerAcknowledged")) {
+    document.getElementById("disclaimerModal").style.display = "flex";
+  }
+});
+
+// Add the functions to the window object so they can be called from HTML
+window.closeDisclaimer = closeDisclaimer;
+window.showDisclaimer = showDisclaimer;
