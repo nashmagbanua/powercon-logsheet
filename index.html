@@ -145,26 +145,8 @@
 
   <script type="module" src="script.js"></script>
   <script>
-    // Register service worker with update prompt
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js').then(reg => {
-        console.log('✅ Service Worker registered');
-
-        reg.onupdatefound = () => {
-          const newWorker = reg.installing;
-          newWorker.onstatechange = () => {
-            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              if (confirm('A new version is available. Reload now?')) {
-                window.location.reload();
-              }
-            }
-          };
-        };
-      }).catch(err => console.log('❌ Service Worker failed:', err));
-    }
-
     // Auto year update
-    document.getElementById("currentYear").textContent = new Date().getFullYear();
+  document.getElementById("currentYear").textContent = new Date().getFullYear();
 
     // Disclaimer logic
     function closeDisclaimer() {
