@@ -41,7 +41,6 @@ async function handleLogin() {
     return;
   }
 
-  // Save the supervisor's lastname and proceed to operator name form
   localStorage.setItem('currentUserLastname', data.lastname);
   document.getElementById('login-form').style.display = 'none';
   document.getElementById('operator-form').style.display = 'block';
@@ -55,15 +54,11 @@ function handleStartSession() {
     return;
   }
 
-  // Save the operator's name and show the main app
   localStorage.setItem('currentOperatorName', operatorName);
   document.getElementById('operator-form').style.display = 'none';
   document.getElementById('app-content').style.display = 'block';
-
-  // Display the full name on the dashboard
   document.getElementById('operator-name').textContent = operatorName;
 
-  // Load data from Supabase after a successful login session
   loadPreviousReadings();
   updateTotals();
 }
@@ -71,24 +66,43 @@ function handleStartSession() {
 // --- Main Application Logic ---
 
 function updateTotals() {
+  let grandTotal = 0; // lahat ng subtotal
+
   sections.forEach(section => {
     const rows = document.querySelectorAll(`${section.selector} tbody tr`);
+    let sectionSubtotal = 0;
+
     rows.forEach(row => {
       const startInput = row.querySelector(".start");
       const endInput = row.querySelector(".end");
       const totalSpan = row.querySelector(".total");
 
-      const start = parseFloat(startInput.value);
-      const end = parseFloat(endInput.value);
+      const start = parseFloat(startInput?.value);
+      const end = parseFloat(endInput?.value);
 
       if (!isNaN(start) && !isNaN(end)) {
         const total = end - start;
         totalSpan.textContent = total >= 0 ? total.toFixed(2) : "0.00";
+        sectionSubtotal += total >= 0 ? total : 0;
       } else {
         totalSpan.textContent = "0";
       }
     });
+
+    // Update subtotal per section
+    const subtotalCell = document.querySelector(`${section.selector} .subtotal`);
+    if (subtotalCell) {
+      subtotalCell.textContent = sectionSubtotal.toFixed(2);
+    }
+
+    grandTotal += sectionSubtotal;
   });
+
+  // Update grand total
+  const grandTotalSpan = document.getElementById("grandtotal");
+  if (grandTotalSpan) {
+    grandTotalSpan.textContent = grandTotal.toFixed(2);
+  }
 }
 
 async function saveCurrentReadings() {
@@ -132,7 +146,6 @@ async function saveCurrentReadings() {
     if (!confirmSave) return;
   }
 
-  // I-save ang lahat ng data sa Supabase
   for (const rowData of allRows) {
     await supabase.from(rowData.table).insert(rowData);
   }
@@ -175,7 +188,6 @@ async function loadPreviousReadings() {
 // --- Event Listeners ---
 
 document.addEventListener("DOMContentLoaded", () => {
-  // Check if a session already exists
   const currentUserLastname = localStorage.getItem('currentUserLastname');
   const currentOperatorName = localStorage.getItem('currentOperatorName');
 
@@ -187,7 +199,6 @@ document.addEventListener("DOMContentLoaded", () => {
     loadPreviousReadings();
   }
 
-  // Set today's date
   document.getElementById('date-input').valueAsDate = new Date();
 });
 
@@ -197,22 +208,13 @@ document.addEventListener("input", function (e) {
   }
 });
 
-// Event listener for the Login button
 document.getElementById('login-btn').addEventListener('click', handleLogin);
-
-// Event listener for the Start Session button
 document.getElementById('start-btn').addEventListener('click', handleStartSession);
-
-// Event listener for the Save button
 document.getElementById('save-btn').addEventListener('click', saveCurrentReadings);
-
-// Event listener for the Reload button
 document.getElementById('reload-btn').addEventListener('click', loadPreviousReadings);
 
-// Auto-update copyright year
 document.getElementById("currentYear").textContent = new Date().getFullYear();
 
-// Disclaimer logic
 function closeDisclaimer() {
   localStorage.setItem("disclaimerAcknowledged", "true");
   document.getElementById("disclaimerModal").style.display = "none";
@@ -228,24 +230,14 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-// Ilagay ang function na ito sa dulo ng script.js
 function handleLogout() {
-  // Clear all relevant local storage items
   localStorage.removeItem('currentUserLastname');
   localStorage.removeItem('currentOperatorName');
-
-  // I-clear din ang mga readings na naka-save sa local storage
-  // Note: Kung wala kang local storage saving, huwag mo nang isama ito
-  // I-delete lahat ng local storage na naka-save sa app
-  localStorage.clear(); 
-
-  // I-reload ang buong page para bumalik sa login form
+  localStorage.clear();
   window.location.reload();
 }
 
-// Event listener para sa Logout button
 document.getElementById('logout-btn').addEventListener('click', handleLogout);
 
-// Add the functions to the window object so they can be called from HTML
 window.closeDisclaimer = closeDisclaimer;
 window.showDisclaimer = showDisclaimer;
