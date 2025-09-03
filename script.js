@@ -192,7 +192,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 document.addEventListener("input", function (e) {
-  if (e.target.closest('td') && e.target.closest('td').previousElementSibling) {
+  if (e.target.classList.contains("start") || e.target.classList.contains("end")) {
     updateTotals();
   }
 });
@@ -227,6 +227,24 @@ window.addEventListener("DOMContentLoaded", () => {
     document.getElementById("disclaimerModal").style.display = "flex";
   }
 });
+
+// Ilagay ang function na ito sa dulo ng script.js
+function handleLogout() {
+  // Clear all relevant local storage items
+  localStorage.removeItem('currentUserLastname');
+  localStorage.removeItem('currentOperatorName');
+
+  // I-clear din ang mga readings na naka-save sa local storage
+  // Note: Kung wala kang local storage saving, huwag mo nang isama ito
+  // I-delete lahat ng local storage na naka-save sa app
+  localStorage.clear(); 
+
+  // I-reload ang buong page para bumalik sa login form
+  window.location.reload();
+}
+
+// Event listener para sa Logout button
+document.getElementById('logout-btn').addEventListener('click', handleLogout);
 
 // Add the functions to the window object so they can be called from HTML
 window.closeDisclaimer = closeDisclaimer;
