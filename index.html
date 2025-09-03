@@ -23,6 +23,12 @@
       <button id="login-btn">Login</button>
     </div>
 
+    <div id="operator-form" style="display: none;">
+      <h2>Operator Name</h2>
+      <label>Operator's Full Name: <input type="text" id="operator-name-input" placeholder="Enter full name" /></label>
+      <button id="start-btn">Start Session</button>
+    </div>
+
     <div id="app-content" style="display: none;">
       <div class="header-form">
         <label>Date: <input type="date" id="date-input" /></label>
@@ -122,11 +128,11 @@
   </div>
 
   <footer style="text-align:center; font-size:13px; color:gray; margin-top:40px; padding:20px 10px; font-family:'Inter', sans-serif;">
-  © <span id="currentYear"></span> ABN Engineering Department - Utilities.<br>
-  This system is for internal use only.<br>
-  <a href="#" onclick="showDisclaimer()" style="color:#28a745; text-decoration:none; font-weight:500;">View Disclaimer</a><br>
-  <strong id="appVersion"></strong>
-</footer>
+    © <span id="currentYear"></span> ABN Engineering Department - Utilities.<br>
+    This system is for internal use only.<br>
+    <a href="#" onclick="showDisclaimer()" style="color:#28a745; text-decoration:none; font-weight:500;">View Disclaimer</a><br>
+    <strong id="appVersion"></strong>
+  </footer>
 
   <script type="module" src="script.js"></script>
   <script>
