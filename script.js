@@ -8,10 +8,10 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Mga global variables para sa mga equipment at table names
 const sections = [
-  { name: 'Utilities', table: 'utilities_readings', selector: '.section:nth-of-type(1) table' },
-  { name: 'Process', table: 'process_readings', selector: '.section:nth-of-type(2) table' },
-  { name: 'Bottling', table: 'bottling_readings', selector: '.section:nth-of-type(3) table' },
-  { name: 'LVSG 5 Loads', table: 'lvsg5loads_readings', selector: '.section:nth-of-type(4) table' }
+  { name: 'Utilities', table: 'utilities_readings', selector: '#utilities-section table' },
+  { name: 'Process', table: 'process_readings', selector: '#process-section table' },
+  { name: 'Bottling', table: 'bottling_readings', selector: '#bottling-section table' },
+  { name: 'LVSG 5 Loads', table: 'lvsg5loads_readings', selector: '#lvsg5-section table' }
 ];
 
 // --- Authentication Logic ---
