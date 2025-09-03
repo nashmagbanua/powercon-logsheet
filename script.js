@@ -41,14 +41,30 @@ async function handleLogin() {
     return;
   }
 
-  // Save user state and show the main app
-  localStorage.setItem('currentUser', data.lastname);
-  document.getElementById('operator-name').textContent = data.lastname.toUpperCase();
+  // Save the supervisor's lastname and proceed to operator name form
+  localStorage.setItem('currentUserLastname', data.lastname);
   document.getElementById('login-form').style.display = 'none';
+  document.getElementById('operator-form').style.display = 'block';
+}
+
+function handleStartSession() {
+  const operatorName = document.getElementById('operator-name-input').value;
+
+  if (operatorName.trim() === '') {
+    alert('Please enter the operator\'s full name.');
+    return;
+  }
+
+  // Save the operator's name and show the main app
+  localStorage.setItem('currentOperatorName', operatorName);
+  document.getElementById('operator-form').style.display = 'none';
   document.getElementById('app-content').style.display = 'block';
 
-  // Load data from Supabase after successful login
-  await loadPreviousReadings();
+  // Display the full name on the dashboard
+  document.getElementById('operator-name').textContent = operatorName;
+
+  // Load data from Supabase after a successful login session
+  loadPreviousReadings();
   updateTotals();
 }
 
@@ -76,7 +92,7 @@ function updateTotals() {
 }
 
 async function saveCurrentReadings() {
-  const currentUserLastname = localStorage.getItem('currentUser');
+  const currentUserLastname = localStorage.getItem('currentUserLastname');
   if (!currentUserLastname) {
     alert('You are not logged in.');
     return;
@@ -125,9 +141,9 @@ async function saveCurrentReadings() {
 }
 
 async function loadPreviousReadings() {
-  const currentUserLastname = localStorage.getItem('currentUser');
+  const currentUserLastname = localStorage.getItem('currentUserLastname');
   if (!currentUserLastname) {
-    return; // Don't try to load if not logged in
+    return;
   }
 
   for (const section of sections) {
@@ -159,12 +175,15 @@ async function loadPreviousReadings() {
 // --- Event Listeners ---
 
 document.addEventListener("DOMContentLoaded", () => {
-  // Check if user is already logged in
-  const currentUser = localStorage.getItem('currentUser');
-  if (currentUser) {
+  // Check if a session already exists
+  const currentUserLastname = localStorage.getItem('currentUserLastname');
+  const currentOperatorName = localStorage.getItem('currentOperatorName');
+
+  if (currentUserLastname && currentOperatorName) {
     document.getElementById('login-form').style.display = 'none';
+    document.getElementById('operator-form').style.display = 'none';
     document.getElementById('app-content').style.display = 'block';
-    document.getElementById('operator-name').textContent = currentUser.toUpperCase();
+    document.getElementById('operator-name').textContent = currentOperatorName;
     loadPreviousReadings();
   }
 
@@ -172,7 +191,6 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById('date-input').valueAsDate = new Date();
 });
 
-// Listener for all number inputs to update totals
 document.addEventListener("input", function (e) {
   if (e.target.closest('td') && e.target.closest('td').previousElementSibling) {
     updateTotals();
@@ -181,6 +199,9 @@ document.addEventListener("input", function (e) {
 
 // Event listener for the Login button
 document.getElementById('login-btn').addEventListener('click', handleLogin);
+
+// Event listener for the Start Session button
+document.getElementById('start-btn').addEventListener('click', handleStartSession);
 
 // Event listener for the Save button
 document.getElementById('save-btn').addEventListener('click', saveCurrentReadings);
@@ -191,7 +212,7 @@ document.getElementById('reload-btn').addEventListener('click', loadPreviousRead
 // Auto-update copyright year
 document.getElementById("currentYear").textContent = new Date().getFullYear();
 
-// Disclaimer logic (from your original code)
+// Disclaimer logic
 function closeDisclaimer() {
   localStorage.setItem("disclaimerAcknowledged", "true");
   document.getElementById("disclaimerModal").style.display = "none";
