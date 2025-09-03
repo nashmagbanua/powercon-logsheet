@@ -108,62 +108,43 @@ function updateTotals() {
 async function saveCurrentReadings() {
   const currentUserLastname = localStorage.getItem('currentUserLastname');
   if (!currentUserLastname) {
-    alert('You are not logged in.');
+    alert("No user logged in!");
     return;
   }
 
-  const currentDate = new Date().toISOString().slice(0, 10);
-  let inserts = [];
-  let hasEmpty = false;
-
-  // Kolektahin lahat ng rows per section
-  sections.forEach(section => {
+  for (const section of sections) {
     const rows = document.querySelectorAll(`${section.selector} tbody tr`);
-    const equipmentNames = Array.from(rows).map(row => row.querySelector('td:first-child').textContent.trim());
 
-    rows.forEach((row, index) => {
-      const startInput = row.querySelector(".start");
-      const endInput = row.querySelector(".end");
-      const totalSpan = row.querySelector(".total");
+    for (const row of rows) {
+      const equipmentName = row.querySelector('td:first-child').textContent.trim();
+      const startInput = row.querySelector('.start');
+      const endInput = row.querySelector('.end');
+      const totalSpan = row.querySelector('.total');
 
-      if (startInput.value === "" || endInput.value === "") {
-        hasEmpty = true;
+      const start = parseFloat(startInput.value);
+      const end = parseFloat(endInput.value);
+      const total = parseFloat(totalSpan.textContent);
+
+      if (!isNaN(start) && !isNaN(end)) {
+        const { error } = await supabase
+          .from(section.table)
+          .insert([{
+            lastname: currentUserLastname,
+            date: new Date().toISOString().split('T')[0],
+            equipment: encodeURIComponent(equipmentName), // ✅ FIX dito
+            start_reading: start,
+            end_reading: end,
+            total_kwh: total
+          }]);
+
+        if (error) {
+          console.error("Save error:", error);
+        }
       }
-
-      const rowData = {
-        lastname: currentUserLastname,
-        date: currentDate,
-        equipment: equipmentNames[index],
-        start_reading: parseFloat(startInput.value) || null,
-        end_reading: parseFloat(endInput.value) || null,
-        total_kwh: parseFloat(totalSpan.textContent) || null
-      };
-
-      inserts.push({ table: section.table, rowData });
-    });
-  });
-
-  if (hasEmpty) {
-    const confirmSave = confirm("You left some fields empty. Do you want to continue saving?");
-    if (!confirmSave) return;
-  }
-
-  // Counter para sa success/error
-  let successCount = 0;
-  let errorCount = 0;
-
-  for (const { table, rowData } of inserts) {
-    const { error } = await supabase.from(table).insert(rowData);
-    if (error) {
-      console.error(`❌ Insert error on ${table}:`, error.message, rowData);
-      errorCount++;
-    } else {
-      console.log(`✅ Inserted into ${table}:`, rowData);
-      successCount++;
     }
   }
 
-  alert(`Save complete!\n\n✅ Success: ${successCount}\n❌ Errors: ${errorCount}`);
+  alert("Readings saved successfully!");
 }
 
 async function loadPreviousReadings() {
@@ -177,15 +158,14 @@ async function loadPreviousReadings() {
       const equipmentName = row.querySelector('td:first-child').textContent.trim();
       const startInput = row.querySelector('.start');
 
-      // Kunin ang latest end_reading para sa bawat equipment
       const { data, error } = await supabase
         .from(section.table)
         .select('end_reading')
         .eq('lastname', currentUserLastname)
-        .eq('equipment', equipmentName)
+        .eq('equipment', encodeURIComponent(equipmentName)) // ✅ FIX
         .order('created_at', { ascending: false })
         .limit(1)
-        .maybeSingle(); // ✅ mas safe kaysa single()
+        .maybeSingle();
 
       if (!error && data) {
         startInput.value = data.end_reading;
@@ -198,6 +178,7 @@ async function loadPreviousReadings() {
   updateTotals();
   alert('Previous readings loaded!');
 }
+
 // --- Event Listeners ---
 
 document.addEventListener("DOMContentLoaded", () => {
