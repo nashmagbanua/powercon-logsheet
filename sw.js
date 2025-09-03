@@ -1,4 +1,4 @@
-const CACHE_NAME = 'power-logsheet-v5'; // ← Bump version every update
+const CACHE_NAME = 'power-logsheet-v6'; // ← Bump version every update
 const FILES_TO_CACHE = [
   '/',
   '/index.html',
