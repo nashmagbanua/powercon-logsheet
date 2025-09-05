@@ -148,8 +148,8 @@ async function saveCurrentReadings() {
 }
 
 async function loadPreviousReadings() {
-  const currentUserLastname = localStorage.getItem('currentUserLastname');
-  if (!currentUserLastname) return;
+  //const currentUserLastname = localStorage.getItem('currentUserLastname');
+  //if (!currentUserLastname) return;
 
   for (const section of sections) {
     const rows = document.querySelectorAll(`${section.selector} tbody tr`);
@@ -161,7 +161,7 @@ async function loadPreviousReadings() {
       const { data, error } = await supabase
         .from(section.table)
         .select('end_reading')
-        .eq('lastname', currentUserLastname)
+        //.eq('lastname', currentUserLastname)
         .eq('equipment', encodeURIComponent(equipmentName)) // ✅ FIX
         .order('created_at', { ascending: false })
         .limit(1)
