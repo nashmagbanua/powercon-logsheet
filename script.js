@@ -370,3 +370,29 @@ document.addEventListener("DOMContentLoaded", () => {
     downloadBtn.addEventListener("click", downloadCSV);
   }
 });
+
+// --- Summary Log Modal Controls ---
+document.addEventListener("DOMContentLoaded", () => {
+  const modal = document.getElementById("summaryModal");
+  const openBtn = document.getElementById("open-summary-btn");
+  const closeBtn = document.getElementById("close-summary-btn");
+
+  if (openBtn && modal) {
+    openBtn.addEventListener("click", () => {
+      modal.style.display = "flex"; // show modal
+    });
+  }
+
+  if (closeBtn && modal) {
+    closeBtn.addEventListener("click", () => {
+      modal.style.display = "none"; // hide modal
+    });
+  }
+
+  // Close when clicking outside modal content
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) {
+      modal.style.display = "none";
+    }
+  });
+});
