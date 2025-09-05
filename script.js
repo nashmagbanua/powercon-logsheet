@@ -235,3 +235,138 @@ document.getElementById('logout-btn').addEventListener('click', handleLogout);
 
 window.closeDisclaimer = closeDisclaimer;
 window.showDisclaimer = showDisclaimer;
+
+// --- Summary Log Loader ---
+async function loadSummaryLogs(date) {
+  const tbody = document.querySelector("#summary-log-table tbody");
+  if (!tbody) return;
+
+  tbody.innerHTML = "<tr><td colspan='5'>Loading...</td></tr>";
+
+  const tables = [
+    { name: "utilities_readings", area: "Utilities" },
+    { name: "process_readings", area: "Process" },
+    { name: "bottling_readings", area: "Bottling" },
+    { name: "lvsg5loads_readings", area: "LVSG 5 Loads" }
+  ];
+
+  let allLogs = [];
+
+  for (let tbl of tables) {
+    const { data, error } = await supabase
+      .from(tbl.name)
+      .select("equipment, total_kwh, lastname, date")
+      .eq("date", date);
+
+    if (error) {
+      console.error(`Error fetching from ${tbl.name}:`, error);
+      continue;
+    }
+
+    if (data && data.length > 0) {
+      const mapped = data.map(row => ({
+        area: tbl.area,
+        equipment: decodeURIComponent(row.equipment),
+        total: row.total_kwh,
+        operator: row.lastname,
+        date: row.date
+      }));
+      allLogs = allLogs.concat(mapped);
+    }
+  }
+
+  tbody.innerHTML = "";
+  if (allLogs.length === 0) {
+    tbody.innerHTML = "<tr><td colspan='5'>No logs found for this date.</td></tr>";
+  } else {
+    allLogs.forEach(log => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${log.area}</td>
+        <td>${log.equipment}</td>
+        <td>${log.total ?? 0}</td>
+        <td>${log.operator ?? "-"}</td>
+        <td>${log.date}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    // --- Grand Total row ---
+    const grand = allLogs.reduce((sum, l) => sum + (parseFloat(l.total) || 0), 0);
+    const trTotal = document.createElement("tr");
+    trTotal.innerHTML = `
+      <td colspan="2"><strong>Grand Total</strong></td>
+      <td><strong>${grand.toFixed(2)}</strong></td>
+      <td colspan="2"></td>
+    `;
+    tbody.appendChild(trTotal);
+  }
+}
+
+// --- Auto-load logs when date changes ---
+document.addEventListener("DOMContentLoaded", () => {
+  const summaryDate = document.getElementById("summary-date");
+  if (summaryDate) {
+    summaryDate.addEventListener("change", (e) => {
+      loadSummaryLogs(e.target.value);
+    });
+  }
+});
+
+// --- Toggle Summary Log (Accordion + Auto-scroll) ---
+document.addEventListener("DOMContentLoaded", () => {
+  const toggleBtn = document.getElementById("toggle-summary");
+  const content = document.getElementById("summary-content");
+  const section = document.getElementById("summary-log-section");
+
+  if (toggleBtn && content) {
+    toggleBtn.addEventListener("click", () => {
+      if (content.style.display === "none") {
+        content.style.display = "block";
+        toggleBtn.innerHTML = "📊 Summary Log ⯅"; // open state
+        // Auto-scroll into view
+        section.scrollIntoView({ behavior: "smooth", block: "start" });
+      } else {
+        content.style.display = "none";
+        toggleBtn.innerHTML = "📊 Summary Log ⯆"; // closed state
+      }
+    });
+  }
+});
+
+// --- Download Summary Logs as CSV ---
+function downloadCSV() {
+  const table = document.getElementById("summary-log-table");
+  if (!table) return;
+
+  let csv = [];
+  const rows = table.querySelectorAll("tr");
+
+  for (let row of rows) {
+    let cols = row.querySelectorAll("td, th");
+    let rowData = [];
+    cols.forEach(col => rowData.push(`"${col.innerText}"`));
+    csv.push(rowData.join(","));
+  }
+
+  // Create CSV file
+  const csvContent = csv.join("\n");
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+
+  // Download
+  const link = document.createElement("a");
+  link.setAttribute("href", url);
+  link.setAttribute("download", `summary_logs_${document.getElementById("summary-date").value || "all"}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+// Attach event listener
+document.addEventListener("DOMContentLoaded", () => {
+  const downloadBtn = document.getElementById("download-summary-btn");
+  if (downloadBtn) {
+    downloadBtn.addEventListener("click", downloadCSV);
+  }
+});
