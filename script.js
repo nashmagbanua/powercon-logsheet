@@ -129,9 +129,9 @@ async function saveCurrentReadings() {
         const { error } = await supabase
           .from(section.table)
           .insert([{
-            lastname: currentUserLastname,
+            lastname: currentOperatorName,
             date: new Date().toISOString().split('T')[0],
-            equipment: encodeURIComponent(equipmentName), // ✅ FIX dito
+            equipment: encodeURIComponent(equipmentName), 
             start_reading: start,
             end_reading: end,
             total_kwh: total
@@ -162,7 +162,7 @@ async function loadPreviousReadings() {
         .from(section.table)
         .select('end_reading')
         //.eq('lastname', currentUserLastname)
-        .eq('equipment', encodeURIComponent(equipmentName)) // ✅ FIX
+        .eq('equipment', encodeURIComponent(equipmentName)) 
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
