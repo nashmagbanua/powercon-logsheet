@@ -129,7 +129,7 @@ async function saveCurrentReadings() {
         const { error } = await supabase
           .from(section.table)
           .insert([{
-            lastname: currentOperatorName,
+            lastname: currentUserLastname,
             date: new Date().toISOString().split('T')[0],
             equipment: encodeURIComponent(equipmentName), 
             start_reading: start,
