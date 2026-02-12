@@ -3,320 +3,231 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>POWER CON</title>
+  <title>POWERCON Cloud - Nutribeu</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+  
   <style>
-    .font-mono-numbers { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+    .font-mono-numbers { font-family: ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+    
+    /* Background Image Setup */
+    body { 
+      background-image: linear-gradient(rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.85)), url('./assets/bg.jpg');
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+    }
+
     .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.95); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 0.75rem; }
     .modal-content { background: white; border-radius: 2rem; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
     .btn-touch:active { transform: scale(0.96); opacity: 0.9; }
-    input[type="number"] { font-size: 16px !important; } /* Avoid iOS zoom */
+    
+    /* Mobile Input Fix */
+    input[type="date"], input[type="number"] { -webkit-appearance: none; min-height: 3.5rem; }
   </style>
 </head>
-<body class="h-full bg-slate-50 text-slate-900 overflow-x-hidden">
+<body class="h-full text-slate-900 overflow-x-hidden">
   <div id="app" class="h-full w-full"></div>
 
   <script>
+    // --- YOUR FIREBASE CONFIG ---
+    const firebaseConfig = {
+      apiKey: "AIzaSyCwtWs9YdZMojl1FwQNXbAF-QRhWCrlWMQ",
+      authDomain: "powercon-nutriveb.firebaseapp.com",
+      projectId: "powercon-nutriveb",
+      storageBucket: "powercon-nutriveb.firebasestorage.app",
+      messagingSenderId: "780606101460",
+      appId: "1:780606101460:web:ce9b6c7b73bb756a5a6841",
+      databaseURL: "https://powercon-nutriveb-default-rtdb.asia-southeast1.firebasedatabase.app"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
     const MOCK_EQUIPMENT = [
-      { id: '1', name: 'Refrigeration System', loc: 'UTILITIES' }, 
-      { id: '2', name: 'Clean Steam Generator', loc: 'UTILITIES' }, 
-      { id: '3', name: 'Bulk Chemical System', loc: 'UTILITIES' }, 
-      { id: '4', name: 'Condensate Return System', loc: 'UTILITIES' }, 
-      { id: '5', name: 'RVAC', loc: 'UTILITIES' }, 
-      { id: '6', name: 'BOILER', loc: 'UTILITIES' }, 
-      { id: '7', name: 'Compressed Dry Air (CDA)', loc: 'UTILITIES' }, 
-      { id: '8', name: 'Waste Water Treatment Plant (WWTP)', loc: 'UTILITIES' }, 
-      { id: '9', name: 'Water Treatment Plant (WTP)', loc: 'UTILITIES' }, 
-      { id: '10', name: 'Combined Water Storage (CWS)', loc: 'UTILITIES' }, 
-      { id: '11', name: 'Sump Pit Pump 1', loc: 'UTILITIES' }, 
-      { id: '12', name: 'Freezer & Cold Storage', loc: 'UTILITIES' }, 
-      { id: '13', name: 'CIP Line (E7)', loc: 'PROCESS' }, 
-      { id: '14', name: 'Bottle Washer (E8)', loc: 'PROCESS' }, 
-      { id: '15', name: 'Modular Labeller (E9)', loc: 'PROCESS' }, 
-      { id: '16', name: 'Container Conveyor (E10)', loc: 'PROCESS' }, 
-      { id: '17', name: 'Conveyor Lubrication (E11)', loc: 'PROCESS' }, 
-      { id: '18', name: 'Alwin Soy', loc: 'PROCESS' }, 
-      { id: '19', name: 'Process MCC', loc: 'PROCESS' }, 
-      { id: '20', name: 'Homogenizer', loc: 'PROCESS' }, 
-      { id: '21', name: 'Soya Bean Pre-treatment & Handling', loc: 'PROCESS' }, 
-      { id: '22', name: 'Sugar Dissolving', loc: 'PROCESS' }, 
-      { id: '23', name: 'Container Dryer (E1)', loc: 'BOTTLING' }, 
-      { id: '24', name: 'Packer (E2)', loc: 'BOTTLING' }, 
-      { id: '25', name: 'Unpacker (E3)', loc: 'BOTTLING' }, 
-      { id: '26', name: 'Container Depalettiser (E4)', loc: 'BOTTLING' }, 
-      { id: '27', name: 'Pack Washing (E5)', loc: 'BOTTLING' }, 
-      { id: '28', name: 'Inspector (E6)', loc: 'BOTTLING' }, 
-      { id: '29', name: 'Pack Conveyor (E12)', loc: 'BOTTLING' }, 
-      { id: '30', name: 'Ups', loc: 'BOTTLING' }, 
-      { id: '31', name: 'Wrap Round', loc: 'BOTTLING' }, 
-      { id: '32', name: 'Hydro Sterilizer', loc: 'BOTTLING' }, 
-      { id: '33', name: 'Filler', loc: 'BOTTLING' }, 
-      { id: '34', name: 'DPP', loc: 'LVSG 5 LOADS' }, 
-      { id: '35', name: 'DLP', loc: 'LVSG 5 LOADS' }, 
-      { id: '36', name: 'WareHouse', loc: 'LVSG 5 LOADS' }, 
-      { id: '37', name: 'RVAC (220V)', loc: 'LVSG 5 LOADS' }, 
-      { id: '38', name: 'WWTP (220V)', loc: 'LVSG 5 LOADS' }, 
-      { id: '39', name: 'DP-WM', loc: 'LVSG 5 LOADS' }, 
-      { id: '40', name: 'Sumppit Pump2', loc: 'LVSG 5 LOADS' }, 
-      { id: '41', name: 'Accumulation Table', loc: 'LVSG 5 LOADS' }
+      { id: '1', name: 'Refrigeration System', loc: 'UTILITIES' }, { id: '2', name: 'Clean Steam Generator', loc: 'UTILITIES' }, { id: '3', name: 'Bulk Chemical System', loc: 'UTILITIES' }, { id: '4', name: 'Condensate Return System', loc: 'UTILITIES' }, { id: '5', name: 'RVAC', loc: 'UTILITIES' }, { id: '6', name: 'BOILER', loc: 'UTILITIES' }, { id: '7', name: 'Compressed Dry Air (CDA)', loc: 'UTILITIES' }, { id: '8', name: 'Waste Water Treatment Plant (WWTP)', loc: 'UTILITIES' }, { id: '9', name: 'Water Treatment Plant (WTP)', loc: 'UTILITIES' }, { id: '10', name: 'Combined Water Storage (CWS)', loc: 'UTILITIES' }, { id: '11', name: 'Sump Pit Pump 1', loc: 'UTILITIES' }, { id: '12', name: 'Freezer & Cold Storage', loc: 'UTILITIES' }, { id: '13', name: 'CIP Line (E7)', loc: 'PROCESS' }, { id: '14', name: 'Bottle Washer (E8)', loc: 'PROCESS' }, { id: '15', name: 'Modular Labeller (E9)', loc: 'PROCESS' }, { id: '16', name: 'Container Conveyor (E10)', loc: 'PROCESS' }, { id: '17', name: 'Conveyor Lubrication (E11)', loc: 'PROCESS' }, { id: '18', name: 'Alwin Soy', loc: 'PROCESS' }, { id: '19', name: 'Process MCC', loc: 'PROCESS' }, { id: '20', name: 'Homogenizer', loc: 'PROCESS' }, { id: '21', name: 'Soya Bean Pre-treatment & Handling', loc: 'PROCESS' }, { id: '22', name: 'Sugar Dissolving', loc: 'PROCESS' }, { id: '23', name: 'Container Dryer (E1)', loc: 'BOTTLING' }, { id: '24', name: 'Packer (E2)', loc: 'BOTTLING' }, { id: '25', name: 'Unpacker (E3)', loc: 'BOTTLING' }, { id: '26', name: 'Container Depalettiser (E4)', loc: 'BOTTLING' }, { id: '27', name: 'Pack Washing (E5)', loc: 'BOTTLING' }, { id: '28', name: 'Inspector (E6)', loc: 'BOTTLING' }, { id: '29', name: 'Pack Conveyor (E12)', loc: 'BOTTLING' }, { id: '30', name: 'Ups', loc: 'BOTTLING' }, { id: '31', name: 'Wrap Round', loc: 'BOTTLING' }, { id: '32', name: 'Hydro Sterilizer', loc: 'BOTTLING' }, { id: '33', name: 'Filler', loc: 'BOTTLING' }, { id: '34', name: 'DPP', loc: 'LVSG 5 LOADS' }, { id: '35', name: 'DLP', loc: 'LVSG 5 LOADS' }, { id: '36', name: 'WareHouse', loc: 'LVSG 5 LOADS' }, { id: '37', name: 'RVAC (220V)', loc: 'LVSG 5 LOADS' }, { id: '38', name: 'WWTP (220V)', loc: 'LVSG 5 LOADS' }, { id: '39', name: 'DP-WM', loc: 'LVSG 5 LOADS' }, { id: '40', name: 'Sumppit Pump2', loc: 'LVSG 5 LOADS' }, { id: '41', name: 'Accumulation Table', loc: 'LVSG 5 LOADS' }
     ];
 
     class PowerCon {
       constructor() {
         this.state = {
-          view: 'home', currentIndex: 0, sessionReadings: [],
+          view: 'home', currentIndex: 0, 
           date: new Date().toISOString().split('T')[0],
           filterDate: new Date().toISOString().split('T')[0],
-          isSetup: localStorage.getItem('powercon_setup') === 'true',
-          editingItem: null
+          sessionReadings: [],
+          cloudReadings: {},
+          loading: false
         };
+        this.init();
+      }
+
+      async init() {
         this.render();
+        await this.syncWithCloud();
+      }
+
+      async syncWithCloud() {
+        this.state.loading = true; this.render();
+        const snapshot = await db.ref('readings/' + this.state.filterDate).once('value');
+        this.state.cloudReadings = snapshot.val() || {};
+        this.state.loading = false; this.render();
       }
 
       start() {
-        const last = JSON.parse(localStorage.getItem('powercon_last') || '{}');
-        this.state.equipment = MOCK_EQUIPMENT.map(e => ({
-          ...e, prevVal: this.state.isSetup ? (last[e.id]?.curr || 0) : null
-        }));
-        this.state.currentIndex = 0;
         this.state.sessionReadings = [];
+        this.state.currentIndex = 0;
         this.state.view = 'reading';
         this.render();
       }
 
-      saveReading(curr, base = null) {
-        const eq = this.state.equipment[this.state.currentIndex];
-        const prev = this.state.isSetup ? eq.prevVal : parseFloat(base);
+      async saveReading(curr, prevInput) {
+        const eq = MOCK_EQUIPMENT[this.state.currentIndex];
         const current = parseFloat(curr);
-        if (current < prev) {
-          if (!confirm(`⚠️ ABNORMAL: Current is lower than Previous! Meter reset?`)) return;
+        
+        // Auto-fetch yesterday's data as default if no input
+        let prev = prevInput ? parseFloat(prevInput) : 0;
+        if (!prevInput) {
+          const yesterday = new Date(this.state.date);
+          yesterday.setDate(yesterday.getDate() - 1);
+          const yKey = yesterday.toISOString().split('T')[0];
+          const ySnap = await db.ref(`readings/${yKey}/${eq.id}`).once('value');
+          prev = ySnap.exists() ? ySnap.val().curr : 0;
         }
-        this.state.sessionReadings[this.state.currentIndex] = { id: eq.id, name: eq.name, loc: eq.loc, curr: current, prev: prev, usage: current - prev };
-        if (this.state.currentIndex < 40) { this.state.currentIndex++; this.render(); }
-        else { this.state.view = 'review'; this.render(); }
-      }
 
-      quickEditSave(id, newPrev, newCurr) {
-        const p = parseFloat(newPrev); const c = parseFloat(newCurr);
-        if (c < p) if (!confirm(`⚠️ Abnormal reading detected. Save anyway?`)) return;
-        const history = JSON.parse(localStorage.getItem('powercon_history') || '[]');
-        const hIndex = history.findIndex(h => h.date === this.state.filterDate);
-        if (hIndex > -1) {
-          const itemIndex = history[hIndex].data.findIndex(d => d.id === id);
-          if (itemIndex > -1) {
-            history[hIndex].data[itemIndex].prev = p;
-            history[hIndex].data[itemIndex].curr = c;
-            history[hIndex].data[itemIndex].usage = c - p;
-            localStorage.setItem('powercon_history', JSON.stringify(history));
-          }
+        if (current < prev && !confirm("⚠️ ABNORMAL: Current is lower than Previous. Continue?")) return;
+
+        this.state.sessionReadings[this.state.currentIndex] = {
+          id: eq.id, name: eq.name, loc: eq.loc, curr: current, prev: prev, usage: current - prev
+        };
+
+        if (this.state.currentIndex < 40) {
+          this.state.currentIndex++;
+          this.render();
+        } else {
+          this.state.view = 'review';
+          this.render();
         }
-        this.state.editingItem = null; this.render();
       }
 
-      finalSave() {
-        const history = JSON.parse(localStorage.getItem('powercon_history') || '[]');
-        const entry = { date: this.state.date, data: this.state.sessionReadings };
-        const existingIndex = history.findIndex(h => h.date === this.state.date);
-        if(existingIndex > -1) history[existingIndex] = entry;
-        else history.unshift(entry);
-        localStorage.setItem('powercon_history', JSON.stringify(history));
-        const lastMap = {}; this.state.sessionReadings.forEach(r => { lastMap[r.id] = r; });
-        localStorage.setItem('powercon_last', JSON.stringify(lastMap));
-        localStorage.setItem('powercon_setup', 'true');
-        this.state.isSetup = true; this.state.view = 'home'; this.render();
-      }
-
-      printLogsheet() {
-        const history = JSON.parse(localStorage.getItem('powercon_history') || '[]');
-        const data = history.find(h => h.date === this.state.filterDate);
-        if(!data) return alert("No data recorded for this date!");
-
-        const printWindow = window.open('', '_blank');
-        printWindow.document.write(`
-          <html>
-            <head>
-              <title>Nutribev Logsheet - ${data.date}</title>
-              <style>
-                @page { size: A4 landscape; margin: 8mm; }
-                body { font-family: 'Arial', sans-serif; font-size: 8.5px; line-height: 1.2; }
-                .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; padding-bottom: 5px; margin-bottom: 10px; }
-                .logo-box { font-size: 20px; font-weight: bold; border: 2px solid #000; padding: 5px 15px; }
-                .title-box { text-align: center; flex-grow: 1; }
-                .title-box h1 { margin: 0; font-size: 16px; }
-                .tables-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
-                table { width: 100%; border-collapse: collapse; margin-bottom: 5px; }
-                th, td { border: 1px solid #000; padding: 3px; text-align: center; }
-                th { background: #eee; font-size: 8px; }
-                .cat-head { background: #ddd; font-weight: bold; }
-                .name-cell { text-align: left; padding-left: 4px; width: 45%; }
-                .footer { margin-top: 15px; display: flex; justify-content: space-between; font-weight: bold; }
-                .remarks-row { text-align: left; font-style: italic; background: #fafafa; height: 30px; }
-                .doc-info { font-size: 7px; color: #555; margin-top: 5px; }
-              </style>
-            </head>
-            <body>
-              <div class="header">
-                <div class="logo-box">Nutribeu</div>
-                <div class="title-box">
-                  <h1>Daily Equipment Power Reading</h1>
-                  <div>Date: <strong>${data.date}</strong></div>
-                </div>
-                <div style="font-size: 8px;">Doc No: ABN1-NUD-L4-013</div>
-              </div>
-              <div class="tables-grid">
-                <div>
-                  <table>
-                    <thead>
-                      <tr><th colspan="4" class="cat-head">UTILITIES</th></tr>
-                      <tr><th rowspan="2">Equipment</th><th colspan="2">Power Consumption</th><th rowspan="2">Total Power</th></tr>
-                      <tr><th>12:00 AM</th><th>12:00 AM</th></tr>
-                    </thead>
-                    <tbody>
-                      ${data.data.filter(r => r.loc === 'UTILITIES').map(r => `<tr><td class="name-cell">${r.name}</td><td>${r.prev}</td><td>${r.curr}</td><td style="font-weight:bold">${r.usage}</td></tr>`).join('')}
-                      <tr><td colspan="4" class="remarks-row">Remarks:</td></tr>
-                    </tbody>
-                  </table>
-                </div>
-                <div>
-                  <table>
-                    <thead>
-                      <tr><th colspan="4" class="cat-head">PROCESS / BOTTLING</th></tr>
-                      <tr><th rowspan="2">Equipment</th><th colspan="2">Power Consumption</th><th rowspan="2">Total Power</th></tr>
-                      <tr><th>12:00 AM</th><th>12:00 AM</th></tr>
-                    </thead>
-                    <tbody>
-                      ${data.data.filter(r => r.loc === 'PROCESS' || r.loc === 'BOTTLING').map(r => `<tr><td class="name-cell">${r.name}</td><td>${r.prev}</td><td>${r.curr}</td><td style="font-weight:bold">${r.usage}</td></tr>`).join('')}
-                      <tr><td colspan="4" class="remarks-row">Remarks:</td></tr>
-                    </tbody>
-                  </table>
-                </div>
-                <div>
-                  <table>
-                    <thead>
-                      <tr><th colspan="4" class="cat-head">LVSG 5 LOADS</th></tr>
-                      <tr><th rowspan="2">Equipment</th><th colspan="2">Power Consumption</th><th rowspan="2">Total Power</th></tr>
-                      <tr><th>12:00 AM</th><th>12:00 AM</th></tr>
-                    </thead>
-                    <tbody>
-                      ${data.data.filter(r => r.loc === 'LVSG 5 LOADS').map(r => `<tr><td class="name-cell">${r.name}</td><td>${r.prev}</td><td>${r.curr}</td><td style="font-weight:bold">${r.usage}</td></tr>`).join('')}
-                      <tr><td colspan="4" class="remarks-row">Remarks:</td></tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-              <div class="footer">
-                <div>Supervisior: _________________________</div>
-                <div style="font-weight: normal;">*Abtrak: Automated via POWERCON App</div>
-              </div>
-              <div class="doc-info">ABN1-NUD-L4-013 / Rev 01 / Effective: 03012025</div>
-            </body>
-          </html>
-        `);
-        printWindow.document.close();
-        setTimeout(() => { printWindow.print(); }, 500);
+      async finalCloudSave() {
+        this.state.loading = true; this.render();
+        const updates = {};
+        this.state.sessionReadings.forEach(r => {
+          updates[`/readings/${this.state.date}/${r.id}`] = r;
+        });
+        try {
+          await db.ref().update(updates);
+          alert("✅ Shared to Cloud Successfully!");
+          this.state.filterDate = this.state.date;
+          this.state.view = 'records';
+          await this.syncWithCloud();
+        } catch (e) { alert("Error: " + e.message); }
+        this.state.loading = false; this.render();
       }
 
       render() { document.getElementById('app').innerHTML = this[`${this.state.view}HTML`](); }
 
       homeHTML() {
-        return `<div class="p-8 max-w-lg mx-auto flex flex-col justify-center min-h-screen">
-          <h1 class="text-6xl font-black text-slate-900 italic tracking-tighter">POWER<span class="text-blue-600">CON</span></h1>
-          <p class="text-slate-400 font-bold text-[10px] tracking-[0.4em] mb-12 uppercase italic">Calculator</p>
-          <div class="space-y-4">
-            <input type="date" value="${this.state.date}" class="w-full p-6 bg-white rounded-3xl border shadow-sm font-bold text-xl outline-none" onchange="app.state.date=this.value">
-            <button onclick="app.start()" class="btn-touch w-full bg-blue-600 text-white font-black py-7 rounded-3xl shadow-xl text-xl uppercase">New Reading</button>
-            <button onclick="app.state.view='records';app.render()" class="btn-touch w-full bg-slate-900 text-white font-bold py-6 rounded-3xl uppercase tracking-widest">LOGSHEET</button>
+        return `<div class="p-6 max-w-sm mx-auto flex flex-col justify-center min-h-screen text-center">
+          <h1 class="text-6xl font-black text-slate-900 italic tracking-tighter mb-2">POWER<span class="text-blue-600">CON</span></h1>
+          <p class="text-slate-400 font-bold text-[10px] tracking-[0.4em] mb-12 uppercase italic">CALCULATOR APP</p>
+          
+          <div class="space-y-4 w-full px-2">
+            <div class="w-full">
+               <label class="text-[9px] font-black text-slate-400 uppercase mb-1 block text-left ml-4">Select Reading Date</label>
+               <input type="date" value="${this.state.date}" class="w-full p-5 bg-white rounded-3xl border-2 border-slate-100 shadow-sm font-bold text-lg outline-none mb-2" onchange="app.state.date=this.value">
+            </div>
+            <button onclick="app.start()" class="btn-touch w-full bg-blue-600 text-white font-black py-6 rounded-3xl shadow-xl text-xl uppercase italic">Start Reading</button>
+            <button onclick="app.state.view='records';app.render()" class="btn-touch w-full bg-slate-900 text-white font-bold py-5 rounded-3xl uppercase tracking-widest text-sm">View LOGSHEET</button>
           </div>
+          ${this.state.loading ? '<p class="mt-6 text-blue-500 font-bold animate-pulse text-xs">Connecting to Singapore Server...</p>' : ''}
         </div>`;
       }
 
       readingHTML() {
-        const eq = this.state.equipment[this.state.currentIndex];
+        const eq = MOCK_EQUIPMENT[this.state.currentIndex];
         return `<div class="modal"><div class="modal-content p-8 shadow-2xl">
           <div class="flex justify-between items-center mb-6"><span class="text-[10px] font-black bg-blue-600 text-white px-3 py-1 rounded-full uppercase">${eq.loc}</span><span class="text-xs font-bold text-slate-300">${this.state.currentIndex+1}/41</span></div>
           <h2 class="text-2xl font-black leading-tight mb-8">${eq.name}</h2>
-          <form onsubmit="event.preventDefault(); app.saveReading(document.getElementById('c').value, document.getElementById('b')?.value)">
-            ${!this.state.isSetup ? `<div class="mb-4 p-4 bg-slate-50 rounded-2xl border"><input type="number" id="b" step="0.01" class="w-full bg-transparent text-2xl font-black outline-none" placeholder="PREVIOUS" required></div>` : 
-            `<div class="mb-4 flex justify-between items-center p-5 bg-blue-50 rounded-2xl border"><span class="font-bold text-blue-400 uppercase text-xs">Prev</span><span class="font-black text-blue-700 text-xl font-mono-numbers">${eq.prevVal.toLocaleString()}</span></div>`}
-            <div class="mb-10"><label class="text-[10px] font-black text-slate-400 uppercase mb-2 block">Current Reading</label><input type="number" id="c" step="0.01" class="w-full p-6 bg-slate-100 rounded-3xl text-4xl font-black outline-none font-mono-numbers shadow-inner" required autofocus></div>
+          <form onsubmit="event.preventDefault(); app.saveReading(document.getElementById('c').value, document.getElementById('p').value)">
+            <div class="mb-4 p-4 bg-slate-50 rounded-2xl border">
+              <label class="text-[8px] font-black text-slate-400 uppercase">Manual Previous Override (Optional)</label>
+              <input type="number" id="p" step="0.01" class="w-full bg-transparent text-xl font-bold outline-none" placeholder="Leave blank to use history">
+            </div>
+            <div class="mb-10">
+              <label class="text-[10px] font-black text-slate-400 uppercase mb-2 block font-bold">Current Reading</label>
+              <input type="number" id="c" step="0.01" class="w-full p-6 bg-slate-100 rounded-3xl text-4xl font-black outline-none font-mono-numbers shadow-inner" required autofocus>
+            </div>
             <div class="grid grid-cols-2 gap-4"><button type="button" onclick="app.state.view='home';app.render()" class="py-5 font-bold text-slate-400 uppercase text-xs">Exit</button><button type="submit" class="bg-blue-600 text-white font-black py-5 rounded-2xl shadow-xl uppercase">Next →</button></div>
           </form>
         </div></div>`;
       }
 
+      reviewHTML() {
+        return `<div class="p-6 max-w-2xl mx-auto flex flex-col min-h-screen">
+          <h2 class="text-4xl font-black mb-2 italic pt-10">Review</h2>
+          <p class="text-[10px] font-bold text-slate-400 uppercase mb-6 tracking-widest">Verify all 41 equipments</p>
+          <div class="bg-white rounded-[2.5rem] shadow-xl border overflow-hidden flex-1 mb-6 overflow-y-auto">
+             <table class="w-full text-xs">
+               <tbody class="divide-y divide-slate-100">
+                 ${this.state.sessionReadings.map((r, i) => `
+                   <tr onclick="app.state.currentIndex=${i}; app.state.view='reading'; app.render()" class="active:bg-blue-50">
+                     <td class="p-4">
+                       <div class="font-black text-slate-800 uppercase text-[10px]">${r.name}</div>
+                       <div class="text-lg font-mono-numbers font-black ${r.curr < r.prev ? 'text-red-500' : 'text-blue-600'}">${r.curr.toLocaleString()}</div>
+                     </td>
+                     <td class="p-4 text-right">
+                        <div class="text-[8px] font-bold text-slate-300">USAGE</div>
+                        <div class="font-mono-numbers font-bold">${r.usage.toLocaleString()}</div>
+                     </td>
+                   </tr>`).join('')}
+               </tbody>
+             </table>
+          </div>
+          <button onclick="app.finalCloudSave()" class="btn-touch w-full bg-green-600 text-white font-black py-7 rounded-3xl shadow-2xl text-xl uppercase italic mb-10">
+            ${this.state.loading ? 'Syncing...' : 'Confirm & Sync to Cloud ✓'}
+          </button>
+        </div>`;
+      }
+
       recordsHTML() {
-        const history = JSON.parse(localStorage.getItem('powercon_history') || '[]');
-        const categories = ["UTILITIES", "PROCESS", "BOTTLING", "LVSG 5 LOADS"];
-        const selectedIndex = history.findIndex(h => h.date === this.state.filterDate);
-        const selectedRecord = history[selectedIndex];
-        let totalUsage = 0; if (selectedRecord) totalUsage = selectedRecord.data.reduce((sum, r) => sum + (r.usage || 0), 0);
-        let diffText = "No previous data"; let diffColor = "text-slate-400";
-        const yesterdayRecord = history[selectedIndex + 1];
-        if (selectedRecord && yesterdayRecord) {
-          const diff = totalUsage - yesterdayRecord.data.reduce((sum, r) => sum + (r.usage || 0), 0);
-          if (diff > 0) { diffText = `▲ Up by ${Math.abs(diff).toLocaleString()} kWh`; diffColor = "text-red-500"; }
-          else if (diff < 0) { diffText = `▼ Down by ${Math.abs(diff).toLocaleString()} kWh`; diffColor = "text-green-500"; }
-        }
-        const displayData = selectedRecord ? selectedRecord.data : [];
+        const cats = ["UTILITIES", "PROCESS", "BOTTLING", "LVSG 5 LOADS"];
+        const data = Object.values(this.state.cloudReadings);
+        const total = data.reduce((s, r) => s + (r.usage || 0), 0);
 
         return `<div class="p-4 max-w-2xl mx-auto min-h-screen pb-24">
-          <div class="flex justify-between items-center mb-4 pt-4"><button onclick="app.state.view='home';app.render()" class="font-black text-slate-400 text-xs tracking-widest">← HOME</button><input type="date" value="${this.state.filterDate}" onchange="app.state.filterDate=this.value; app.render()" class="bg-white px-3 py-1 rounded-xl border font-bold text-xs outline-none"></div>
+          <div class="flex justify-between items-center mb-4 pt-4">
+            <button onclick="app.state.view='home';app.render()" class="font-black text-slate-400 text-xs tracking-widest">← HOME</button>
+            <input type="date" value="${this.state.filterDate}" onchange="app.state.filterDate=this.value; app.syncWithCloud()" class="bg-white px-3 py-1 rounded-xl border-2 border-blue-100 font-bold text-xs shadow-sm">
+          </div>
           
-          <div class="bg-white p-6 rounded-[2rem] shadow-xl border border-slate-100 mb-6 text-center">
-            <h3 class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Plant Usage</h3>
-            <div class="text-4xl font-black text-slate-900 font-mono-numbers mb-1">${totalUsage.toLocaleString()} <span class="text-sm text-slate-300 italic">kWh</span></div>
-            <p class="text-[10px] font-black uppercase italic ${diffColor}">${diffText}</p>
+          <div class="bg-white/80 backdrop-blur p-6 rounded-[2rem] shadow-xl border border-white mb-6 text-center">
+            <h3 class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Live Plant Usage</h3>
+            <div class="text-4xl font-black text-slate-900 font-mono-numbers">${total.toLocaleString()} <span class="text-sm text-slate-300 italic">kWh</span></div>
           </div>
 
           <div class="space-y-6">
-            ${displayData.length === 0 ? '<div class="text-center p-10 font-bold text-slate-300">No data for this date</div>' : categories.map(cat => `
+            ${cats.map(cat => `
               <div>
-                <div class="px-4 mb-2 text-[10px] font-black text-slate-400 tracking-widest uppercase">${cat}</div>
-                <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden divide-y">
-                  ${displayData.filter(d => d.loc === cat).map(r => `
-                    <div class="p-5 active:bg-blue-50 btn-touch" onclick="app.state.editingItem = ${JSON.stringify(r).replace(/"/g, '&quot;')}; app.render()">
-                      <div class="text-[11px] font-black text-slate-800 uppercase mb-3 flex justify-between">${r.name} ${r.curr < r.prev ? '<span class="text-red-500 italic">! ABNORMAL</span>' : ''}</div>
+                <div class="px-4 mb-2 text-[10px] font-black text-slate-500 uppercase tracking-widest">${cat}</div>
+                <div class="bg-white/90 backdrop-blur rounded-3xl shadow-sm border border-slate-200 overflow-hidden divide-y">
+                  ${MOCK_EQUIPMENT.filter(e => e.loc === cat).map(e => {
+                    const r = this.state.cloudReadings[e.id] || { prev: 0, curr: 0, usage: 0 };
+                    return `
+                    <div class="p-5 active:bg-blue-50">
+                      <div class="text-[11px] font-black text-slate-800 uppercase mb-3 flex justify-between">${e.name} ${r.curr > 0 && r.curr < r.prev ? '<span class="text-red-500 italic">! ABNORMAL</span>' : ''}</div>
                       <div class="grid grid-cols-3 gap-2">
-                        <div class="text-center bg-slate-50 p-2 rounded-xl"><div class="text-[7px] font-bold text-slate-400 uppercase">Previous</div><div class="text-[12px] font-mono-numbers">${r.prev.toLocaleString()}</div></div>
-                        <div class="text-center bg-slate-50 p-2 rounded-xl"><div class="text-[7px] font-bold text-slate-400 uppercase">Currenr</div><div class="text-[12px] font-mono-numbers font-black ${r.curr < r.prev ? 'text-red-600 underline' : ''}">${r.curr.toLocaleString()}</div></div>
-                        <div class="text-center bg-blue-50 p-2 rounded-xl"><div class="text-[7px] font-black text-blue-400 uppercase">TOTAL kWh</div><div class="text-[12px] font-mono-numbers font-black text-blue-600">${r.usage.toLocaleString()}</div></div>
+                        <div class="text-center bg-white border p-2 rounded-xl"><div class="text-[7px] font-bold text-slate-400">Previous</div><div class="text-[12px] font-mono-numbers">${r.prev.toLocaleString()}</div></div>
+                        <div class="text-center bg-white border p-2 rounded-xl"><div class="text-[7px] font-bold text-slate-400">Current</div><div class="text-[12px] font-mono-numbers font-black">${r.curr > 0 ? r.curr.toLocaleString() : '---'}</div></div>
+                        <div class="text-center bg-blue-600 p-2 rounded-xl"><div class="text-[7px] font-black text-blue-100">TOTAL kWh</div><div class="text-[12px] font-mono-numbers font-black text-white">${r.usage.toLocaleString()}</div></div>
                       </div>
-                    </div>
-                  `).join('')}
+                    </div>`;
+                  }).join('')}
                 </div>
               </div>
             `).join('')}
           </div>
-
-          ${displayData.length > 0 ? `
-          <div class="fixed bottom-6 left-0 right-0 px-6">
-            <button onclick="app.printLogsheet()" class="w-full bg-green-600 text-white font-black py-5 rounded-2xl shadow-2xl uppercase tracking-widest flex items-center justify-center gap-3">🖨️ PRINT LOGSHEET</button>
-          </div>` : ''}
-
-          ${this.state.editingItem ? `
-            <div class="modal"><div class="modal-content p-8 shadow-2xl border-2 border-blue-600">
-              <h3 class="text-xl font-black mb-1">Edit Reading</h3>
-              <p class="text-[9px] font-bold text-blue-600 uppercase mb-8">${this.state.editingItem.name}</p>
-              <div class="space-y-4 mb-8">
-                <div class="p-4 bg-slate-50 rounded-2xl border"><label class="text-[8px] font-black text-slate-400 block mb-1">Previous</label><input type="number" id="edit-prev" value="${this.state.editingItem.prev}" class="w-full bg-transparent font-black text-2xl outline-none font-mono-numbers"></div>
-                <div class="p-4 bg-slate-50 rounded-2xl border"><label class="text-[8px] font-black text-slate-400 block mb-1">Current</label><input type="number" id="edit-curr" value="${this.state.editingItem.curr}" class="w-full bg-transparent font-black text-2xl outline-none font-mono-numbers"></div>
-              </div>
-              <div class="flex gap-4"><button onclick="app.state.editingItem=null; app.render()" class="flex-1 py-4 font-bold text-slate-400 uppercase text-xs">Cancel</button><button onclick="app.quickEditSave('${this.state.editingItem.id}', document.getElementById('edit-prev').value, document.getElementById('edit-curr').value)" class="flex-1 bg-slate-900 text-white font-black py-4 rounded-2xl uppercase text-xs">Update</button></div>
-            </div></div>` : ''}
-        </div>`;
-      }
-
-      reviewHTML() {
-        return `<div class="p-6 max-w-2xl mx-auto flex flex-col min-h-screen">
-          <h2 class="text-4xl font-black mb-8 italic pt-10 tracking-tighter">Review</h2>
-          <div class="bg-white rounded-[2.5rem] shadow-xl border overflow-hidden flex-1 mb-6 overflow-y-auto">
-             <table class="w-full text-xs">
-               <tbody class="divide-y divide-slate-100">
-                 ${this.state.sessionReadings.map(r => `<tr><td class="p-4"><div class="text-[8px] font-black text-slate-400 uppercase">${r.name}</div><div class="text-lg font-mono-numbers font-black ${r.curr < r.prev ? 'text-red-500' : 'text-blue-600'}">${r.curr.toLocaleString()}</div></td></tr>`).join('')}
-               </tbody>
-             </table>
-          </div>
-          <button onclick="app.finalSave()" class="btn-touch w-full bg-blue-600 text-white font-black py-7 rounded-3xl shadow-2xl text-xl uppercase mb-10 italic">Confirm & Save ✓</button>
         </div>`;
       }
     }
