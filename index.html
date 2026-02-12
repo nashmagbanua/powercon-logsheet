@@ -221,11 +221,11 @@
       homeHTML() {
         return `<div class="p-8 max-w-lg mx-auto flex flex-col justify-center min-h-screen">
           <h1 class="text-6xl font-black text-slate-900 italic tracking-tighter">POWER<span class="text-blue-600">CON</span></h1>
-          <p class="text-slate-400 font-bold text-[10px] tracking-[0.4em] mb-12 uppercase italic">Nutribeu Automation</p>
+          <p class="text-slate-400 font-bold text-[10px] tracking-[0.4em] mb-12 uppercase italic">Calculator</p>
           <div class="space-y-4">
             <input type="date" value="${this.state.date}" class="w-full p-6 bg-white rounded-3xl border shadow-sm font-bold text-xl outline-none" onchange="app.state.date=this.value">
             <button onclick="app.start()" class="btn-touch w-full bg-blue-600 text-white font-black py-7 rounded-3xl shadow-xl text-xl uppercase">New Reading</button>
-            <button onclick="app.state.view='records';app.render()" class="btn-touch w-full bg-slate-900 text-white font-bold py-6 rounded-3xl uppercase tracking-widest">Dashboard</button>
+            <button onclick="app.state.view='records';app.render()" class="btn-touch w-full bg-slate-900 text-white font-bold py-6 rounded-3xl uppercase tracking-widest">LOGSHEET</button>
           </div>
         </div>`;
       }
