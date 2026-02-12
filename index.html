@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>POWERCON</title>
+  <title>POWERCON - Nutriveb</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
@@ -42,15 +42,23 @@
 
     const fmt = (num) => (num || 0).toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 3 });
 
+    // Custom function para makuha ang YYYY-MM-DD local format
+    const getLocalDate = (d) => {
+      const offset = d.getTimezoneOffset();
+      const localDate = new Date(d.getTime() - (offset * 60 * 1000));
+      return localDate.toISOString().split('T')[0];
+    };
+
     class PowerCon {
       constructor() {
+        const today = new Date();
         this.state = {
           view: 'home', currentIndex: 0,
-          date: new Date().toISOString().split('T')[0],
-          filterDate: new Date().toISOString().split('T')[0],
+          date: getLocalDate(today),
+          filterDate: getLocalDate(today),
           sessionReadings: [],
           cloudReadings: {},
-          yesterdayReadings: {}, // Placeholder para sa data kahapon
+          yesterdayReadings: {},
           loading: false
         };
         this.init();
@@ -61,41 +69,36 @@
       async syncWithCloud() {
         this.state.loading = true; this.render();
         
-        // 1. Kunin ang data para sa piniling date (Today)
-        const snapshot = await db.ref('readings/' + this.state.filterDate).once('value');
+        // 1. Get Today's Data
+        const snapshot = await db.ref('readings/' + this.state.date).once('value');
         this.state.cloudReadings = snapshot.val() || {};
 
-        // 2. MAGIC FIX: Kunin ang data ng KAHAPON (Previous)
+        // 2. Get Yesterday's Data
         const d = new Date(this.state.date);
         d.setDate(d.getDate() - 1);
-        const yKey = d.toISOString().split('T')[0];
+        const yKey = getLocalDate(d);
         const ySnap = await db.ref('readings/' + yKey).once('value');
         this.state.yesterdayReadings = ySnap.val() || {};
 
-        // 3. I-resume ang session kung meron na
-        if(this.state.filterDate === this.state.date) {
-            MOCK_EQUIPMENT.forEach((eq, i) => {
-                if(this.state.cloudReadings[eq.id]) this.state.sessionReadings[i] = this.state.cloudReadings[eq.id];
-            });
-        }
+        // 3. Populate session for resuming
+        MOCK_EQUIPMENT.forEach((eq, i) => {
+            if(this.state.cloudReadings[eq.id]) this.state.sessionReadings[i] = this.state.cloudReadings[eq.id];
+        });
         
         this.state.loading = false; this.render();
       }
 
-      start() { this.state.view = 'reading'; this.state.currentIndex = 0; this.render(); }
+      async start() { 
+        await this.syncWithCloud(); // Siguraduhin na load ang data bago mag-start
+        this.state.view = 'reading'; 
+        this.state.currentIndex = 0; 
+        this.render(); 
+      }
 
       async saveReading(curr, prevInput) {
         const eq = MOCK_EQUIPMENT[this.state.currentIndex];
         const current = parseFloat(parseFloat(curr).toFixed(3));
-        
-        let prev = 0;
-        if (prevInput) {
-          prev = parseFloat(parseFloat(prevInput).toFixed(3));
-        } else {
-          // Kunin mula sa "yesterdayReadings" na niload natin sa syncWithCloud
-          const yData = this.state.yesterdayReadings ? this.state.yesterdayReadings[eq.id] : null;
-          prev = yData ? parseFloat(yData.curr.toFixed(3)) : 0;
-        }
+        let prev = parseFloat(parseFloat(prevInput || 0).toFixed(3));
 
         const usage = parseFloat((current - prev).toFixed(3));
         if (current < prev && !confirm("⚠️ ABNORMAL: Current is lower than Previous. Continue?")) return;
@@ -114,11 +117,11 @@
         this.state.sessionReadings.forEach(r => { if(r) updates[`/readings/${this.state.date}/${r.id}`] = r; });
         try {
           await db.ref().update(updates);
-          alert("✅ Records Synced with Cloud!");
-          this.state.filterDate = this.state.date;
+          alert("✅ Records Saved Successfully!");
           this.state.view = 'records';
+          this.state.filterDate = this.state.date;
           await this.syncWithCloud();
-        } catch (e) { alert("Sync Error: " + e.message); }
+        } catch (e) { alert("Error: " + e.message); }
         this.state.loading = false; this.render();
       }
 
@@ -127,16 +130,16 @@
       homeHTML() {
         return `<div class="p-6 max-w-sm mx-auto flex flex-col justify-center min-h-screen text-center">
           <h1 class="text-6xl font-black text-slate-900 italic tracking-tighter mb-2">POWER<span class="text-blue-600">CON</span></h1>
-          <p class="text-slate-400 font-bold text-[10px] tracking-[0.4em] mb-12 uppercase italic text-blue-500">Calculator</p>
+          <p class="text-slate-400 font-bold text-[10px] tracking-[0.4em] mb-12 uppercase italic text-blue-500 font-black">Calculator</p>
           <div class="flex flex-col gap-4 w-full">
             <div class="w-full">
-               <label class="text-[9px] font-black text-slate-400 uppercase mb-1 block text-center tracking-widest">Select Reading Date</label>
-               <input type="date" id="mainDate" value="${this.state.date}" class="w-full px-5 py-4 bg-white rounded-3xl border-2 border-slate-100 shadow-sm font-bold text-lg outline-none text-center" onchange="app.state.date=this.value; app.syncWithCloud()">
+               <label class="text-[9px] font-black text-slate-400 uppercase mb-1 block text-center tracking-widest">Shift Date</label>
+               <input type="date" value="${this.state.date}" class="w-full px-5 py-4 bg-white rounded-3xl border-2 border-slate-100 shadow-sm font-bold text-lg outline-none text-center" onchange="app.state.date=this.value; app.syncWithCloud()">
             </div>
-            <button onclick="app.start()" class="btn-touch w-full bg-blue-600 text-white font-black py-6 rounded-3xl shadow-xl text-xl uppercase italic">Start / Resume</button>
-            <button onclick="app.state.view='records';app.render()" class="btn-touch w-full bg-slate-900 text-white font-bold py-5 rounded-3xl uppercase tracking-widest text-sm">View Dashboard</button>
+            <button onclick="app.start()" class="btn-touch w-full bg-blue-600 text-white font-black py-6 rounded-3xl shadow-xl text-xl uppercase italic">Start Reading</button>
+            <button onclick="app.state.view='records';app.render()" class="btn-touch w-full bg-slate-900 text-white font-bold py-5 rounded-3xl uppercase tracking-widest text-sm text-blue-400 italic font-black underline underline-offset-4 ">View Dashboard</button>
           </div>
-          ${this.state.loading ? '<p class="mt-4 text-[10px] font-bold animate-pulse text-blue-600 uppercase">Fetching Cloud Data...</p>' : ''}
+          ${this.state.loading ? '<p class="mt-4 text-[10px] font-black animate-pulse text-blue-600 uppercase tracking-widest">Verifying Cloud Data...</p>' : ''}
         </div>`;
       }
 
@@ -144,8 +147,7 @@
         const eq = MOCK_EQUIPMENT[this.state.currentIndex];
         const existing = this.state.sessionReadings[this.state.currentIndex];
         
-        // Default value para sa Previous field (auto-fetch)
-        let autoPrev = '';
+        let autoPrev = '0.000';
         if (existing) {
           autoPrev = existing.prev;
         } else {
@@ -154,26 +156,25 @@
         }
 
         return `<div class="modal"><div class="modal-content p-8 shadow-2xl">
-          <div class="flex justify-between items-center mb-6"><span class="text-[10px] font-black bg-blue-600 text-white px-3 py-1 rounded-full uppercase">${eq.loc}</span><span class="text-xs font-bold text-slate-300">${this.state.currentIndex+1}/41</span></div>
+          <div class="flex justify-between items-center mb-6"><span class="text-[10px] font-black bg-blue-600 text-white px-3 py-1 rounded-full uppercase italic">${eq.loc}</span><span class="text-xs font-bold text-slate-300">${this.state.currentIndex+1}/41</span></div>
           <h2 class="text-2xl font-black leading-tight mb-8">${eq.name}</h2>
           <form onsubmit="event.preventDefault(); app.saveReading(document.getElementById('c').value, document.getElementById('p').value)">
             <div class="mb-4 p-4 bg-slate-50 rounded-2xl border text-left">
-              <label class="text-[8px] font-black text-slate-400 uppercase tracking-widest italic text-blue-500">Previous Reading (Verified)</label>
-              <input type="number" id="p" step="0.001" class="w-full bg-transparent text-xl font-bold outline-none text-slate-400" value="${autoPrev}" placeholder="0.000">
+              <label class="text-[8px] font-black text-slate-400 uppercase tracking-widest">Previous (Auto-Fetched)</label>
+              <input type="number" id="p" step="0.001" class="w-full bg-transparent text-xl font-bold outline-none text-slate-600" value="${autoPrev}">
             </div>
             <div class="mb-10 text-left">
-              <label class="text-[10px] font-black text-slate-400 uppercase mb-2 block tracking-widest text-center">Enter Current Reading</label>
+              <label class="text-[10px] font-black text-slate-400 uppercase mb-2 block tracking-widest text-center">Current Reading</label>
               <input type="number" id="c" step="0.001" class="w-full p-6 bg-slate-100 rounded-3xl text-4xl font-black outline-none font-mono-numbers shadow-inner text-center text-blue-600" value="${existing ? existing.curr : ''}" required autofocus>
             </div>
-            <div class="grid grid-cols-2 gap-4"><button type="button" onclick="app.state.view='home';app.render()" class="py-5 font-bold text-slate-400 uppercase text-xs">Exit</button><button type="submit" class="bg-blue-600 text-white font-black py-5 rounded-2xl shadow-xl uppercase tracking-tighter">Save & Next</button></div>
+            <div class="grid grid-cols-2 gap-4"><button type="button" onclick="app.state.view='home';app.render()" class="py-5 font-bold text-slate-400 uppercase text-xs">Exit</button><button type="submit" class="bg-blue-600 text-white font-black py-5 rounded-2xl shadow-xl uppercase">Save</button></div>
           </form>
         </div></div>`;
       }
 
       reviewHTML() {
         return `<div class="p-6 max-w-2xl mx-auto flex flex-col min-h-screen">
-          <h2 class="text-4xl font-black mb-2 italic pt-10 uppercase">Review</h2>
-          <p class="text-[10px] text-slate-400 font-bold mb-6 tracking-widest">TAP ANY ITEM TO EDIT BEFORE SYNCING</p>
+          <h2 class="text-4xl font-black mb-6 italic pt-10 uppercase tracking-tighter">Review Logs</h2>
           <div class="bg-white rounded-[2.5rem] shadow-xl border overflow-hidden flex-1 mb-6 overflow-y-auto">
              <table class="w-full text-xs">
                <tbody class="divide-y divide-slate-100">
@@ -185,7 +186,7 @@
                </tbody>
              </table>
           </div>
-          <button onclick="app.finalCloudSave()" class="btn-touch w-full bg-green-600 text-white font-black py-7 rounded-3xl shadow-2xl text-xl uppercase italic mb-10">Push to Cloud ✓</button>
+          <button onclick="app.finalCloudSave()" class="btn-touch w-full bg-green-600 text-white font-black py-7 rounded-3xl shadow-2xl text-xl uppercase italic mb-10 tracking-widest">Sync Final Data ✓</button>
         </div>`;
       }
 
@@ -195,11 +196,11 @@
         const total = data.reduce((s, r) => s + (r.usage || 0), 0);
         return `<div class="p-4 max-w-2xl mx-auto min-h-screen pb-24">
           <div class="flex justify-between items-center mb-4 pt-4">
-            <button onclick="app.state.view='home';app.render()" class="font-black text-slate-400 text-xs tracking-widest">← HOME</button>
-            <input type="date" value="${this.state.filterDate}" onchange="app.state.filterDate=this.value; app.syncWithCloud()" class="bg-white px-3 py-1 rounded-xl border-2 border-blue-100 font-bold text-xs shadow-sm text-center">
+            <button onclick="app.state.view='home';app.render()" class="font-black text-slate-400 text-xs tracking-widest underline decoration-blue-500">← HOME</button>
+            <input type="date" value="${this.state.filterDate}" onchange="app.state.filterDate=this.value; app.syncWithCloud()" class="bg-white px-3 py-1 rounded-xl border-2 border-blue-100 font-bold text-xs shadow-sm">
           </div>
           <div class="bg-white/90 backdrop-blur p-6 rounded-[2rem] shadow-xl border border-white mb-6 text-center">
-            <h3 class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 italic">Total Plant Load (kWh)</h3>
+            <h3 class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 italic">Daily Usage (kWh)</h3>
             <div class="text-4xl font-black text-slate-900 font-mono-numbers">${fmt(total)}</div>
           </div>
           <div class="space-y-6">
@@ -211,11 +212,11 @@
                     const r = this.state.cloudReadings[e.id] || { prev: 0, curr: 0, usage: 0 };
                     return `
                     <div class="p-5 active:bg-blue-50" onclick="app.editFromDashboard('${e.id}')">
-                      <div class="text-[11px] font-black text-slate-800 uppercase mb-3 flex justify-between">${e.name} <span class="text-[8px] text-blue-400">Edit ✎</span></div>
+                      <div class="text-[11px] font-black text-slate-800 uppercase mb-3 flex justify-between">${e.name} <span class="text-[8px] text-blue-400 italic underline">Edit</span></div>
                       <div class="grid grid-cols-3 gap-2">
-                        <div class="text-center bg-white border p-2 rounded-xl"><div class="text-[7px] font-bold text-slate-400 uppercase">Prev</div><div class="text-[12px] font-mono-numbers">${fmt(r.prev)}</div></div>
-                        <div class="text-center bg-white border p-2 rounded-xl"><div class="text-[7px] font-bold text-blue-500 italic uppercase font-black">Curr</div><div class="text-[12px] font-mono-numbers font-black">${fmt(r.curr)}</div></div>
-                        <div class="text-center bg-blue-600 p-2 rounded-xl"><div class="text-[7px] font-black text-blue-100 uppercase">Usage</div><div class="text-[12px] font-mono-numbers font-black text-white">${fmt(r.usage)}</div></div>
+                        <div class="text-center bg-white border p-2 rounded-xl"><div class="text-[7px] font-bold text-slate-400">PREV</div><div class="text-[10px] font-mono-numbers">${fmt(r.prev)}</div></div>
+                        <div class="text-center bg-white border p-2 rounded-xl"><div class="text-[7px] font-bold text-blue-500 font-black italic">CURR</div><div class="text-[10px] font-mono-numbers font-black">${fmt(r.curr)}</div></div>
+                        <div class="text-center bg-blue-600 p-2 rounded-xl"><div class="text-[7px] font-black text-blue-100">TOTAL kWh</div><div class="text-[10px] font-mono-numbers font-black text-white">${fmt(r.usage)}</div></div>
                       </div>
                     </div>`;
                   }).join('')}
