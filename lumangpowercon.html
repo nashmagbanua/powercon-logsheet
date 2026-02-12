@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Power Consumption Logsheet</title>
+  <link rel="stylesheet" href="style.css" />
+  <meta name="theme-color" content="#ffffff" />
+  <link rel="icon" type="image/png" href="abnlogo.png" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <header class="app-header">
+    <img src="abnlogo.png" alt="ABN Logo" class="logo" />
+    <h1>Power Consumption Logsheet</h1>
+  </header>
+
+  <div class="container">
+    <div id="login-form">
+      <h2>Please Login</h2>
+      <label>Passcode: <input type="text" id="passcode-input" placeholder="SupervisorLastname on-duty" /></label>
+      <button id="login-btn">Login</button>
+    </div>
+
+    <div id="operator-form" style="display: none;">
+      <h2>Operator Name</h2>
+      <label>Operator's Full Name: <input type="text" id="operator-name-input" placeholder="Enter full name" /></label>
+      <button id="start-btn">Start Session</button>
+    </div>
+
+    <div id="app-content" style="display: none;">
+      <div class="header-form">
+        <label>Date: <input type="date" id="date-input" /></label>
+        <label>Operator: <span id="operator-name"></span></label>
+      </div>
+
+     <div class="button-group">
+        <button id="save-btn">Save</button>
+        <button id="reload-btn">Reload Previous Reading</button>
+        <button id="logout-btn">Logout</button>
+      </div>
+      <div class="section" id="utilities-section">
+  <h2>Utilities</h2>
+  <table>
+    <thead>
+      <tr><th>Equipment</th><th>Start</th><th>End</th><th>Total (kWh)</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Refrigeration System</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
+      <tr><td>Clean Steam Generator</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
+      <tr><td>Bulk Chemical System</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
+      <tr><td>Condensate Return System</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
+      <tr><td>RVAC</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
+      <tr><td>BOILER</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
+      <tr><td>Compressed Dry Air (CDA)</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
+      <tr><td>Waste Water Treatment Plant (WWTP)</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
+      <tr><td>Water Treatment Plant (WTP)</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
+      <tr><td>Combined Water Storage (CWS)</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
+      <tr><td>Sump Pit Pump 1</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
+      <tr><td>Freezer & Cold Storage</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
+    </tbody>
+    <tfoot>
+  <tr>
+    <td colspan="3"><strong>Subtotal (Utilities)</strong></td>
+    <td><span class="subtotal">0</span></td>
+  </tr>
+</tfoot>
+
+  </table>
+</div>
+
+<div class="section" id="process-section">
+  <h2>Process</h2>
+  <table>
+    <thead>
+      <tr><th>Equipment</th><th>Start</th><th>End</th><th>Total (kWh)</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>CIP Line (E7)</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
+      <tr><td>Bottle Washer (E8)</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
+      <tr><td>Modular Labeller (E9)</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
+      <tr><td>Container Conveyor (E10)</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
+      <tr><td>Conveyor Lubrication (E11)</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
+      <tr><td>Alwin Soy</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
+      <tr><td>Process MCC</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
+      <tr><td>Homogenizer</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
+      <tr><td>Soya Bean Pre-treatment &Handling</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
+      <tr><td>Sugar Dissolving</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
+    </tbody>
+    <tfoot>
+  <tr>
+    <td colspan="3"><strong>Subtotal (Process)</strong></td>
+    <td><span class="subtotal">0</span></td>
+  </tr>
+</tfoot>
+  </table>
+</div>
+
+<div class="section" id="bottling-section">
+  <h2>Bottling</h2>
+  <table>
+    <thead>
+      <tr><th>Equipment</th><th>Start</th><th>End</th><th>Total (kWh)</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Container Dryer (E1)</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
+      <tr><td>Packer (E2)</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
+      <tr><td>Unpacker (E3)</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
+      <tr><td>Container Depalettiser (E4)</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
+      <tr><td>Pack Washing (E5)</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
+      <tr><td>Inspector (E6)</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
+      <tr><td>Pack Conveyor (E12)</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
+      <tr><td>Ups</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
+      <tr><td>Wrap Round</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
+      <tr><td>Hydro Sterilizer</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
+      <tr><td>Filler</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
+    </tbody>
+    <tfoot>
+  <tr>
+    <td colspan="3"><strong>Subtotal (Bottling)</strong></td>
+    <td><span class="subtotal">0</span></td>
+  </tr>
+</tfoot>
+</table>
+</div>
+
+<div class="section" id="lvsg5-section">
+  <h2>LVSG 5 LOADS</h2>
+  <table>
+    <thead>
+      <tr><th>Equipment</th><th>Start</th><th>End</th><th>Total (kWh)</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>DPP</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
+      <tr><td>DLP</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
+      <tr><td>WareHouse</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
+      <tr><td>RVAC (220V)</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
+      <tr><td>WWTP (220V)</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
+      <tr><td>DP-WM</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
+      <tr><td>Sump pit Pump2</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
+      <tr><td>Accumulation Table</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>  
+    </tbody>
+    <tfoot>
+  <tr>
+    <td colspan="3"><strong>Subtotal (LVSG 5 LOADS)</strong></td>
+    <td><span class="subtotal">0</span></td>
+  </tr>
+</tfoot>
+</table>
+</div>
+      <div id="grandtotal-container" style="margin-top:20px; font-weight:bold;">
+  Grand Total (All Sections): <span id="grandtotal">0</span>
+</div>
+        
+    <!-- Summary Log Section -->
+<div class="section" id="summary-log-section" style="margin-top:30px;">
+  <h2 style="cursor:pointer;" id="toggle-summary">📊 Summary Log ⯆</h2>
+
+  <div id="summary-content" style="display:none; margin-top:10px;">
+    <!-- Date Picker -->
+    <label for="summary-date">Select Date: </label>
+    <input type="date" id="summary-date" />
+    <button id="download-summary-btn">⬇️ Download CSV</button>
+
+    <!-- Logs Table -->
+    <table id="summary-log-table" border="1" cellspacing="0" cellpadding="6" style="margin-top:15px; width:100%; text-align:center;">
+      <thead>
+        <tr>
+          <th>Area</th>
+          <th>Equipment</th>
+          <th>Total (kWh)</th>
+          <th>operator assigned</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Logs will be injected here -->
+      </tbody>
+    </table>
+  </div>
+</div>
+      
+ <div id="disclaimerModal" style="position:fixed; top:0; left:0; width:100%; height:100%; background-color:rgba(0,0,0,0.6); display:none; align-items:center; justify-content:center; z-index:1000;">
+    <div style="background:#fff; padding:30px; max-width:500px; border-radius:10px; font-family:'Inter', sans-serif; box-shadow:0 0 15px rgba(0,0,0,0.3); text-align:center;">
+      <h2 style="margin-top:0;">🔒 Internal Use Only</h2>
+      <p style="font-size:15px; line-height:1.6;">
+        This tool is strictly intended for use by the <strong>ABN Engineering Department - Utilities</strong> only.<br>
+        Unauthorized access, sharing, or usage is not permitted and may be subject to disciplinary action.
+      </p>
+      <button onclick="closeDisclaimer()" style="margin-top:20px; padding:10px 20px; background-color:#28a745; color:white; border:none; border-radius:5px; font-size:14px; cursor:pointer;">I Understand</button>
+    </div>
+  </div>
+
+  <footer style="text-align:center; font-size:13px; color:gray; margin-top:40px; padding:20px 10px; font-family:'Inter', sans-serif;">
+    © <span id="currentYear"></span> ABN Engineering Department - Utilities.<br>
+    This system is for internal use only.<br>
+    <a href="#" onclick="showDisclaimer()" style="color:#28a745; text-decoration:none; font-weight:500;">View Disclaimer</a><br>
+    <strong id="appVersion"></strong>
+  </footer>
+
+  <script type="module" src="script.js"></script>
+  <script>
+    // Auto year update
+  document.getElementById("currentYear").textContent = new Date().getFullYear();
+
+    // Disclaimer logic
+    function closeDisclaimer() {
+      localStorage.setItem("disclaimerAcknowledged", "true");
+      document.getElementById("disclaimerModal").style.display = "none";
+    }
+
+    function showDisclaimer() {
+      document.getElementById("disclaimerModal").style.display = "flex";
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      if (!localStorage.getItem("disclaimerAcknowledged")) {
+        document.getElementById("disclaimerModal").style.display = "flex";
+      }
+    });
+  </script>
+</body>
+</html>  
