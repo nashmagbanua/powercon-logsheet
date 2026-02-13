@@ -65,22 +65,23 @@
         };
         this.init();
       }
-        placeholderAction(type) {
+
+      placeholderAction(type) {
         alert(`🚀 FEATURE PREVIEW:\n\nThis will generate the ${type} using the Nutriveb Official Template.\n\nStatus: Pending management approval for digital logsheet format.`);
       }
 
       async init() { this.render(); await this.syncWithCloud(); }
 
-      async syncWithCloud() {
+      async syncWithCloud(targetDate = null) {
         this.state.loading = true; this.render();
-        const snapshot = await db.ref('readings/' + this.state.date).once('value');
+        const dateToQuery = targetDate || this.state.date;
+        const snapshot = await db.ref('readings/' + dateToQuery).once('value');
         this.state.cloudReadings = snapshot.val() || {};
-        const d = new Date(this.state.date);
+        const d = new Date(dateToQuery);
         d.setDate(d.getDate() - 1);
         const yKey = getLocalDate(d);
         const ySnap = await db.ref('readings/' + yKey).once('value');
         this.state.yesterdayReadings = ySnap.val() || {};
-        
         MOCK_EQUIPMENT.forEach((eq, i) => {
             if(this.state.cloudReadings[eq.id]) this.state.sessionReadings[i] = this.state.cloudReadings[eq.id];
         });
@@ -104,20 +105,18 @@
         const current = parseFloat(parseFloat(curr).toFixed(3));
         let prev = parseFloat(parseFloat(prevInput || 0).toFixed(3));
         const usage = parseFloat((current - prev).toFixed(3));
-        
         if (current < prev && !confirm("⚠️ ABNORMAL: Current is lower than Previous. Continue?")) return;
-        
         const data = { id: eq.id, name: eq.name, loc: eq.loc, curr: current, prev: prev, usage: usage };
         this.state.sessionReadings[this.state.currentIndex] = data;
 
         if (this.state.isSingleEdit) {
           this.state.loading = true; this.render();
-          await db.ref(`readings/${this.state.date}/${eq.id}`).set(data);
+          await db.ref(`readings/${this.state.filterDate}/${eq.id}`).set(data);
           this.state.isSingleEdit = false;
           this.state.view = 'records';
-          await this.syncWithCloud();
+          await this.syncWithCloud(this.state.filterDate);
         } else {
-          if (this.state.currentIndex < 40) { this.state.currentIndex++; this.render(); } 
+          if (this.state.currentIndex < MOCK_EQUIPMENT.length - 1) { this.state.currentIndex++; this.render(); } 
           else { this.state.view = 'review'; this.render(); }
         }
       }
@@ -129,12 +128,12 @@
           <h1 class="text-6xl font-black text-slate-900 italic tracking-tighter mb-2">POWER<span class="text-blue-600">CON</span></h1>
           <p class="text-slate-400 font-bold text-[10px] tracking-[0.4em] mb-12 uppercase italic text-blue-500 font-black">CALCULATOR</p>
           <div class="flex flex-col gap-4 w-full">
-            <div class="w-full">
+            <div class="w-full text-left">
                <label class="text-[9px] font-black text-slate-400 uppercase mb-1 block text-center tracking-widest">Reading Date</label>
                <input type="date" value="${this.state.date}" class="w-full px-5 py-4 bg-white rounded-3xl border-2 border-slate-100 shadow-sm font-bold text-lg outline-none text-center" onchange="app.state.date=this.value; app.syncWithCloud()">
             </div>
             <button onclick="app.start()" class="btn-touch w-full bg-blue-600 text-white font-black py-6 rounded-3xl shadow-xl text-xl uppercase italic">Start Reading</button>
-            <button onclick="app.state.view='records';app.render()" class="btn-touch w-full bg-slate-900 text-white font-bold py-5 rounded-3xl uppercase tracking-widest text-sm text-blue-400 italic font-black underline underline-offset-4 ">View Dashboard</button>
+            <button onclick="app.state.view='records';app.state.filterDate=app.state.date;app.syncWithCloud(app.state.date)" class="btn-touch w-full bg-slate-900 text-white font-bold py-5 rounded-3xl uppercase tracking-widest text-sm text-blue-400 italic font-black underline underline-offset-4 ">View Dashboard</button>
           </div>
           ${this.state.loading ? '<p class="mt-4 text-[10px] font-black animate-pulse text-blue-600 uppercase tracking-widest">Verifying Cloud...</p>' : ''}
         </div>`;
@@ -145,45 +144,29 @@
         const progress = ((this.state.currentIndex + 1) / total) * 100;
         const eq = MOCK_EQUIPMENT[this.state.currentIndex];
         const cloudData = this.state.cloudReadings[eq.id];
-        
-        let autoPrev = '0.000';
-        const yData = this.state.yesterdayReadings ? this.state.yesterdayReadings[eq.id] : null;
-        autoPrev = yData ? yData.curr : '0.000';
-
+        let autoPrev = (this.state.yesterdayReadings && this.state.yesterdayReadings[eq.id]) ? this.state.yesterdayReadings[eq.id].curr : '0.000';
         const isPrevLocked = !this.state.isSingleEdit;
-        let currentVal = '';
-        if (this.state.isSingleEdit && cloudData) {
-            currentVal = cloudData.curr;
-            autoPrev = cloudData.prev;
-        }
+        let currentVal = (this.state.isSingleEdit && cloudData) ? cloudData.curr : '';
+        if (this.state.isSingleEdit && cloudData) autoPrev = cloudData.prev;
 
         return `<div class="modal"><div class="modal-content p-8 shadow-2xl relative overflow-hidden">
           <div class="absolute top-0 left-0 w-full h-2 bg-slate-100">
             <div class="h-full bg-blue-600 progress-fill" style="width: ${progress}%"></div>
           </div>
-
           <div class="flex justify-between items-center mb-6 mt-4">
             <span class="text-[10px] font-black bg-blue-600 text-white px-3 py-1 rounded-full uppercase italic">${eq.loc}</span>
             <span class="text-xs font-black text-blue-600 font-mono-numbers">${this.state.currentIndex+1} / ${total}</span>
           </div>
-          
           <h2 class="text-2xl font-black leading-tight mb-8">${eq.name}</h2>
-          
           <form onsubmit="event.preventDefault(); app.saveReading(document.getElementById('c').value, document.getElementById('p').value)">
             <div class="mb-4 p-4 ${isPrevLocked ? 'bg-slate-50' : 'bg-blue-50 border-blue-200 border-2'} rounded-2xl border text-left">
-              <label class="text-[8px] font-black text-slate-400 uppercase tracking-widest italic flex justify-between mb-1">
-                Previous Reading ${isPrevLocked ? '🔒' : '🔓'}
-              </label>
-              <input type="number" id="p" step="0.001" class="w-full bg-transparent text-xl font-bold outline-none" 
-                value="${autoPrev}" ${isPrevLocked ? 'disabled' : ''}>
+              <label class="text-[8px] font-black text-slate-400 uppercase tracking-widest italic flex justify-between mb-1">Previous Reading ${isPrevLocked ? '🔒' : '🔓'}</label>
+              <input type="number" id="p" step="0.001" class="w-full bg-transparent text-xl font-bold outline-none" value="${autoPrev}" ${isPrevLocked ? 'disabled' : ''}>
             </div>
-
             <div class="mb-10 text-left">
               <label class="text-[10px] font-black text-slate-400 uppercase mb-2 block tracking-widest text-center">Current Reading</label>
-              <input type="number" id="c" step="0.001" class="w-full p-6 bg-slate-100 rounded-3xl text-4xl font-black outline-none font-mono-numbers shadow-inner text-center text-blue-600" 
-                value="${currentVal}" placeholder="0.000" required autofocus>
+              <input type="number" id="c" step="0.001" class="w-full p-6 bg-slate-100 rounded-3xl text-4xl font-black outline-none font-mono-numbers shadow-inner text-center text-blue-600" value="${currentVal}" placeholder="0.000" required autofocus>
             </div>
-
             <div class="grid grid-cols-2 gap-4">
               <button type="button" onclick="app.exitReading()" class="py-5 font-bold text-slate-400 uppercase text-xs">Exit</button>
               <button type="submit" class="bg-blue-600 text-white font-black py-5 rounded-2xl shadow-xl uppercase">${this.state.isSingleEdit ? 'Update' : 'Save & Next'}</button>
@@ -225,20 +208,22 @@
           alert("✅ Records Saved Successfully!");
           this.state.view = 'records';
           this.state.filterDate = this.state.date;
-          await this.syncWithCloud();
+          await this.syncWithCloud(this.state.date);
         } catch (e) { alert("Error: " + e.message); }
         this.state.loading = false; this.render();
       }
 
       recordsHTML() {
         const cats = ["UTILITIES", "PROCESS", "BOTTLING", "LVSG 5 LOADS"];
-        const data = Object.values(this.state.cloudReadings);
-        const total = data.reduce((s, r) => s + (r.usage || 0), 0);
+        const readingsArray = Object.values(this.state.cloudReadings);
+        const total = readingsArray.reduce((s, r) => s + (r.usage || 0), 0);
         
         return `<div class="p-4 max-w-2xl mx-auto min-h-screen pb-32">
           <div class="flex justify-between items-center mb-4 pt-4">
             <button onclick="app.state.view='home';app.render()" class="font-black text-slate-400 text-xs tracking-widest underline decoration-blue-500">← HOME</button>
-            <input type="date" value="${this.state.filterDate}" onchange="app.state.filterDate=this.value; app.syncWithCloud()" class="bg-white px-3 py-1 rounded-xl border-2 border-blue-100 font-bold text-xs shadow-sm">
+            <input type="date" value="${this.state.filterDate}" 
+              onchange="app.state.filterDate=this.value; app.syncWithCloud(this.value)" 
+              class="bg-white px-3 py-1 rounded-xl border-2 border-blue-100 font-bold text-xs shadow-sm">
           </div>
 
           <div class="bg-white/90 backdrop-blur p-6 rounded-[2rem] shadow-xl border border-white mb-6 text-center">
@@ -257,8 +242,8 @@
                     <div class="p-5 active:bg-blue-50" onclick="app.editFromDashboard('${e.id}')">
                       <div class="text-[11px] font-black text-slate-800 uppercase mb-3 flex justify-between">${e.name} <span class="text-[8px] text-blue-400 italic underline font-black">Admin Edit 🔒</span></div>
                       <div class="grid grid-cols-3 gap-2">
-                        <div class="text-center bg-white border p-2 rounded-xl"><div class="text-[7px] font-bold text-slate-400">PREV (12:00am)</div><div class="text-[10px] font-mono-numbers">${fmt(r.prev)}</div></div>
-                        <div class="text-center bg-white border p-2 rounded-xl"><div class="text-[7px] font-bold text-blue-500 font-black italic">CURR (12:00am)</div><div class="text-[10px] font-mono-numbers font-black">${fmt(r.curr)}</div></div>
+                        <div class="text-center bg-white border p-2 rounded-xl"><div class="text-[7px] font-bold text-slate-400">PREV</div><div class="text-[10px] font-mono-numbers">${fmt(r.prev)}</div></div>
+                        <div class="text-center bg-white border p-2 rounded-xl"><div class="text-[7px] font-bold text-blue-500 font-black italic">CURR</div><div class="text-[10px] font-mono-numbers font-black">${fmt(r.curr)}</div></div>
                         <div class="text-center bg-blue-600 p-2 rounded-xl"><div class="text-[7px] font-black text-blue-100">TOTAL kWh</div><div class="text-[10px] font-mono-numbers font-black text-white">${fmt(r.usage)}</div></div>
                       </div>
                     </div>`;
@@ -269,14 +254,8 @@
           </div>
 
           <div class="fixed bottom-0 left-0 w-full p-4 bg-white/80 backdrop-blur-md border-t flex gap-3">
-             <button onclick="app.placeholderAction('PDF Report')" class="flex-1 bg-slate-900 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/><path d="M4.603 12.087a.81.81 0 0 1-.438-.42c-.195-.388-.13-.776.08-1.102.198-.307.526-.568.897-.787a7.68 7.68 0 0 1 1.487-.645 19.787 19.787 0 0 0 1.062-2.227 7.269 7.269 0 0 1-.43-1.295c-.086-.4-.119-.796-.046-1.136.075-.354.274-.672.65-.823.192-.077.4-.12.602-.077a.7.7 0 0 1 .477.365c.088.192.12.54.1.967-.028.573-.165 1.187-.477 1.765a11.276 11.276 0 0 0 1.13 2.022c.616.289 1.148.52 1.547.747.587.331.85.64.843.937a.494.494 0 0 1-.18.372.409.409 0 0 1-.33.107c-.28-.05-.627-.257-1.067-.606a11.498 11.498 0 0 1-1.074-1.015 12.15 12.15 0 0 1-1.187.423 10.339 10.339 0 0 1-2.328.444c-.496.688-.982 1.188-1.49 1.322a.417.417 0 0 1-.312-.035zm2.802-5.903c.181.583.209 1.128.158 1.56a11.57 11.57 0 0 1-.12-.845c-.032-.35-.02-.69.043-.96.038-.164.1-.304.161-.355.059-.047.12-.05.151-.015a.33.33 0 0 1 .012.054c.006.021.02.059.015.066z"/></svg>
-                Download PDF
-             </button>
-             <button onclick="app.placeholderAction('Official Logsheet Print')" class="flex-1 bg-blue-600 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5 1a2 2 0 0 0-2 2v1h10V3a2 2 0 0 0-2-2H5zm6 8H5a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1z"/><path d="M0 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-1v-2a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v2H2a2 2 0 0 1-2-2V7zm2.5 1a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/></svg>
-                Print Logsheet
-             </button>
+             <button onclick="app.placeholderAction('PDF Report')" class="flex-1 bg-slate-900 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg">Download PDF</button>
+             <button onclick="app.placeholderAction('Official Logsheet Print')" class="flex-1 bg-blue-600 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg">Print Logsheet</button>
           </div>
         </div>`;
       }
