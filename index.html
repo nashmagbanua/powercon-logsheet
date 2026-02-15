@@ -3,19 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>POWERCON - Nutriveb</title>
+  <title>POWERCON - Nutriveb Green</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
   <style>
     .font-mono-numbers { font-family: ui-monospace, monospace; font-variant-numeric: tabular-nums; }
     body { 
-      background-image: linear-gradient(rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.85)), url('./assets/bg.jpg');
+      background-image: linear-gradient(rgba(240, 249, 246, 0.9), rgba(240, 249, 246, 0.9)), url('./assets/bg.jpg');
       background-size: cover; background-position: center; background-attachment: fixed;
     }
     input[type="date"] { display: block; -webkit-appearance: none; min-height: 4rem; width: 100%; }
-    .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.95); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 0.75rem; }
-    .modal-content { background: white; border-radius: 2rem; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
+    .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(6, 78, 59, 0.95); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 0.75rem; }
+    .modal-content { background: white; border-radius: 2.5rem; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; border: 4px solid #10b981; }
     .btn-touch:active { transform: scale(0.96); opacity: 0.9; }
     input:disabled { color: #94a3b8; background-color: #f1f5f9; cursor: not-allowed; opacity: 1; -webkit-text-fill-color: #64748b; }
     .progress-fill { transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
@@ -25,6 +25,7 @@
   <div id="app" class="h-full w-full"></div>
 
   <script>
+    // --- FIREBASE CONFIG (SAME) ---
     const firebaseConfig = {
       apiKey: "AIzaSyCwtWs9YdZMojl1FwQNXbAF-QRhWCrlWMQ",
       authDomain: "powercon-nutriveb.firebaseapp.com",
@@ -125,17 +126,17 @@
 
       homeHTML() {
         return `<div class="p-6 max-w-sm mx-auto flex flex-col justify-center min-h-screen text-center">
-          <h1 class="text-6xl font-black text-slate-900 italic tracking-tighter mb-2">POWER<span class="text-blue-600">CON</span></h1>
-          <p class="text-slate-400 font-bold text-[10px] tracking-[0.4em] mb-12 uppercase italic text-blue-500 font-black">CALCULATOR</p>
+          <h1 class="text-6xl font-black text-emerald-900 italic tracking-tighter mb-2">POWER<span class="text-emerald-500">CON</span></h1>
+          <p class="text-emerald-400 font-bold text-[10px] tracking-[0.4em] mb-12 uppercase italic font-black">UTILITIES CALCULATOR</p>
           <div class="flex flex-col gap-4 w-full">
             <div class="w-full text-left">
-               <label class="text-[9px] font-black text-slate-400 uppercase mb-1 block text-center tracking-widest">Reading Date</label>
-               <input type="date" value="${this.state.date}" class="w-full px-5 py-4 bg-white rounded-3xl border-2 border-slate-100 shadow-sm font-bold text-lg outline-none text-center" onchange="app.state.date=this.value; app.syncWithCloud()">
+               <label class="text-[9px] font-black text-emerald-800/40 uppercase mb-1 block text-center tracking-widest">Reading Date</label>
+               <input type="date" value="${this.state.date}" class="w-full px-5 py-4 bg-white rounded-3xl border-2 border-emerald-100 shadow-sm font-bold text-lg outline-none text-center text-emerald-900" onchange="app.state.date=this.value; app.syncWithCloud()">
             </div>
-            <button onclick="app.start()" class="btn-touch w-full bg-blue-600 text-white font-black py-6 rounded-3xl shadow-xl text-xl uppercase italic">Start Reading</button>
-            <button onclick="app.state.view='records';app.state.filterDate=app.state.date;app.syncWithCloud(app.state.date)" class="btn-touch w-full bg-slate-900 text-white font-bold py-5 rounded-3xl uppercase tracking-widest text-sm text-blue-400 italic font-black underline underline-offset-4 ">View Dashboard</button>
+            <button onclick="app.start()" class="btn-touch w-full bg-emerald-600 text-white font-black py-6 rounded-3xl shadow-xl text-xl uppercase italic">Start Reading</button>
+            <button onclick="app.state.view='records';app.state.filterDate=app.state.date;app.syncWithCloud(app.state.date)" class="btn-touch w-full bg-emerald-900 text-white font-bold py-5 rounded-3xl uppercase tracking-widest text-sm text-emerald-400 italic font-black underline underline-offset-4 ">View Dashboard</button>
           </div>
-          ${this.state.loading ? '<p class="mt-4 text-[10px] font-black animate-pulse text-blue-600 uppercase tracking-widest">Verifying Cloud...</p>' : ''}
+          ${this.state.loading ? '<p class="mt-4 text-[10px] font-black animate-pulse text-emerald-600 uppercase tracking-widest">Syncing Cloud...</p>' : ''}
         </div>`;
       }
 
@@ -150,26 +151,26 @@
         if (this.state.isSingleEdit && cloudData) autoPrev = cloudData.prev;
 
         return `<div class="modal"><div class="modal-content p-8 shadow-2xl relative overflow-hidden">
-          <div class="absolute top-0 left-0 w-full h-2 bg-slate-100">
-            <div class="h-full bg-blue-600 progress-fill" style="width: ${progress}%"></div>
+          <div class="absolute top-0 left-0 w-full h-2 bg-emerald-50">
+            <div class="h-full bg-emerald-500 progress-fill" style="width: ${progress}%"></div>
           </div>
           <div class="flex justify-between items-center mb-6 mt-4">
-            <span class="text-[10px] font-black bg-blue-600 text-white px-3 py-1 rounded-full uppercase italic">${eq.loc}</span>
-            <span class="text-xs font-black text-blue-600 font-mono-numbers">${this.state.currentIndex+1} / ${total}</span>
+            <span class="text-[10px] font-black bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full uppercase italic">${eq.loc}</span>
+            <span class="text-xs font-black text-emerald-600 font-mono-numbers">${this.state.currentIndex+1} / ${total}</span>
           </div>
-          <h2 class="text-2xl font-black leading-tight mb-8">${eq.name}</h2>
+          <h2 class="text-2xl font-black leading-tight mb-8 text-emerald-900">${eq.name}</h2>
           <form onsubmit="event.preventDefault(); app.saveReading(document.getElementById('c').value, document.getElementById('p').value)">
-            <div class="mb-4 p-4 ${isPrevLocked ? 'bg-slate-50' : 'bg-blue-50 border-blue-200 border-2'} rounded-2xl border text-left">
-              <label class="text-[8px] font-black text-slate-400 uppercase tracking-widest italic flex justify-between mb-1">Previous Reading ${isPrevLocked ? '🔒' : '🔓'}</label>
-              <input type="number" id="p" step="0.001" class="w-full bg-transparent text-xl font-bold outline-none" value="${autoPrev}" ${isPrevLocked ? 'disabled' : ''}>
+            <div class="mb-4 p-4 ${isPrevLocked ? 'bg-slate-50' : 'bg-emerald-50 border-emerald-200 border-2'} rounded-2xl border text-left">
+              <label class="text-[8px] font-black text-emerald-400 uppercase tracking-widest italic flex justify-between mb-1">Previous Reading ${isPrevLocked ? '🔒' : '🔓'}</label>
+              <input type="number" id="p" step="0.001" class="w-full bg-transparent text-xl font-bold outline-none text-emerald-900" value="${autoPrev}" ${isPrevLocked ? 'disabled' : ''}>
             </div>
             <div class="mb-10 text-left">
-              <label class="text-[10px] font-black text-slate-400 uppercase mb-2 block tracking-widest text-center">Current Reading</label>
-              <input type="number" id="c" step="0.001" class="w-full p-6 bg-slate-100 rounded-3xl text-4xl font-black outline-none font-mono-numbers shadow-inner text-center text-blue-600" value="${currentVal}" placeholder="0.000" required autofocus>
+              <label class="text-[10px] font-black text-emerald-800/40 uppercase mb-2 block tracking-widest text-center">Current Reading</label>
+              <input type="number" id="c" step="0.001" class="w-full p-6 bg-emerald-50 rounded-3xl text-4xl font-black outline-none font-mono-numbers shadow-inner text-center text-emerald-600 border border-emerald-100" value="${currentVal}" placeholder="0.000" required autofocus>
             </div>
             <div class="grid grid-cols-2 gap-4">
-              <button type="button" onclick="app.exitReading()" class="py-5 font-bold text-slate-400 uppercase text-xs">Exit</button>
-              <button type="submit" class="bg-blue-600 text-white font-black py-5 rounded-2xl shadow-xl uppercase">${this.state.isSingleEdit ? 'Update' : 'Save & Next'}</button>
+              <button type="button" onclick="app.exitReading()" class="py-5 font-bold text-emerald-300 uppercase text-xs">Exit</button>
+              <button type="submit" class="bg-emerald-600 text-white font-black py-5 rounded-2xl shadow-xl uppercase italic">Save & Next</button>
             </div>
           </form>
         </div></div>`;
@@ -183,19 +184,19 @@
 
       reviewHTML() {
         return `<div class="p-6 max-w-2xl mx-auto flex flex-col min-h-screen">
-          <h2 class="text-4xl font-black mb-6 italic pt-10 uppercase tracking-tighter">Review Logs</h2>
-          <div class="bg-white rounded-[2.5rem] shadow-xl border overflow-hidden flex-1 mb-6 overflow-y-auto">
+          <h2 class="text-4xl font-black mb-6 italic pt-10 uppercase tracking-tighter text-emerald-900">Review Logs</h2>
+          <div class="bg-white rounded-[2.5rem] shadow-xl border border-emerald-100 overflow-hidden flex-1 mb-6 overflow-y-auto">
              <table class="w-full text-xs">
-               <tbody class="divide-y divide-slate-100">
+               <tbody class="divide-y divide-emerald-50">
                  ${this.state.sessionReadings.map((r, i) => r ? `
-                   <tr onclick="app.editFromReview(${i})" class="active:bg-blue-50">
-                     <td class="p-4 font-black text-slate-800 uppercase text-[9px] leading-tight">${r.name}</td>
-                     <td class="p-4 text-right font-mono-numbers font-black text-blue-600">${fmt(r.curr)}</td>
+                   <tr onclick="app.editFromReview(${i})" class="active:bg-emerald-50">
+                     <td class="p-4 font-black text-emerald-900 uppercase text-[9px] leading-tight">${r.name}</td>
+                     <td class="p-4 text-right font-mono-numbers font-black text-emerald-600">${fmt(r.curr)}</td>
                    </tr>` : '').join('')}
                </tbody>
              </table>
           </div>
-          <button onclick="app.finalCloudSave()" class="btn-touch w-full bg-green-600 text-white font-black py-7 rounded-3xl shadow-2xl text-xl uppercase italic mb-10 tracking-widest">Sync Final Data ✓</button>
+          <button onclick="app.finalCloudSave()" class="btn-touch w-full bg-emerald-600 text-white font-black py-7 rounded-3xl shadow-2xl text-xl uppercase italic mb-10 tracking-widest">Sync Final Data ✓</button>
         </div>`;
       }
 
@@ -205,7 +206,7 @@
         this.state.sessionReadings.forEach(r => { if(r) updates[`/readings/${this.state.date}/${r.id}`] = r; });
         try {
           await db.ref().update(updates);
-          alert("✅ Records Saved Successfully!");
+          alert("✅ Nutriveb Records Updated!");
           this.state.view = 'records';
           this.state.filterDate = this.state.date;
           await this.syncWithCloud(this.state.date);
@@ -220,31 +221,31 @@
         
         return `<div class="p-4 max-w-2xl mx-auto min-h-screen pb-32">
           <div class="flex justify-between items-center mb-4 pt-4">
-            <button onclick="app.state.view='home';app.render()" class="font-black text-slate-400 text-xs tracking-widest underline decoration-blue-500">← HOME</button>
+            <button onclick="app.state.view='home';app.render()" class="font-black text-emerald-800/40 text-xs tracking-widest underline decoration-emerald-500">← HOME</button>
             <input type="date" value="${this.state.filterDate}" 
               onchange="app.state.filterDate=this.value; app.syncWithCloud(this.value)" 
-              class="bg-white px-3 py-1 rounded-xl border-2 border-blue-100 font-bold text-xs shadow-sm">
+              class="bg-white px-3 py-1 rounded-xl border-2 border-emerald-100 font-bold text-xs shadow-sm text-emerald-700">
           </div>
 
-          <div class="bg-white/90 backdrop-blur p-6 rounded-[2rem] shadow-xl border border-white mb-6 text-center">
-            <h3 class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 italic">Daily Total Consumption</h3>
-            <div class="text-4xl font-black text-slate-900 font-mono-numbers">${fmt(total)} <span class="text-sm text-blue-500">kWh</span></div>
+          <div class="bg-emerald-900 p-6 rounded-[2rem] shadow-xl border border-emerald-800 mb-6 text-center">
+            <h3 class="text-[9px] font-black text-emerald-400/60 uppercase tracking-widest mb-1 italic">Daily Consumption</h3>
+            <div class="text-4xl font-black text-white font-mono-numbers">${fmt(total)} <span class="text-sm text-emerald-400 uppercase">kWh</span></div>
           </div>
 
           <div class="space-y-6 mb-12">
             ${cats.map(cat => `
               <div>
-                <div class="px-4 mb-2 text-[10px] font-black text-slate-500 uppercase tracking-widest">${cat}</div>
-                <div class="bg-white/90 backdrop-blur rounded-3xl shadow-sm border border-slate-200 overflow-hidden divide-y">
+                <div class="px-4 mb-2 text-[10px] font-black text-emerald-800/40 uppercase tracking-widest">${cat}</div>
+                <div class="bg-white/90 backdrop-blur rounded-[2rem] shadow-sm border border-emerald-100 overflow-hidden divide-y divide-emerald-50">
                   ${MOCK_EQUIPMENT.filter(e => e.loc === cat).map(e => {
                     const r = this.state.cloudReadings[e.id] || { prev: 0, curr: 0, usage: 0 };
                     return `
-                    <div class="p-5 active:bg-blue-50" onclick="app.editFromDashboard('${e.id}')">
-                      <div class="text-[11px] font-black text-slate-800 uppercase mb-3 flex justify-between">${e.name} <span class="text-[8px] text-blue-400 italic underline font-black">Admin Edit 🔒</span></div>
+                    <div class="p-5 active:bg-emerald-50" onclick="app.editFromDashboard('${e.id}')">
+                      <div class="text-[11px] font-black text-emerald-900 uppercase mb-3 flex justify-between">${e.name} <span class="text-[8px] text-emerald-400 italic underline font-black">Admin 🔒</span></div>
                       <div class="grid grid-cols-3 gap-2">
-                        <div class="text-center bg-white border p-2 rounded-xl"><div class="text-[7px] font-bold text-slate-400">PREV</div><div class="text-[10px] font-mono-numbers">${fmt(r.prev)}</div></div>
-                        <div class="text-center bg-white border p-2 rounded-xl"><div class="text-[7px] font-bold text-blue-500 font-black italic">CURR</div><div class="text-[10px] font-mono-numbers font-black">${fmt(r.curr)}</div></div>
-                        <div class="text-center bg-blue-600 p-2 rounded-xl"><div class="text-[7px] font-black text-blue-100">TOTAL kWh</div><div class="text-[10px] font-mono-numbers font-black text-white">${fmt(r.usage)}</div></div>
+                        <div class="text-center bg-emerald-50/30 border border-emerald-50 p-2 rounded-xl"><div class="text-[7px] font-bold text-emerald-300 uppercase">Prev</div><div class="text-[10px] font-mono-numbers text-emerald-800">${fmt(r.prev)}</div></div>
+                        <div class="text-center bg-emerald-50/30 border border-emerald-50 p-2 rounded-xl"><div class="text-[7px] font-black text-emerald-500 uppercase italic">Curr</div><div class="text-[10px] font-mono-numbers font-black text-emerald-900">${fmt(r.curr)}</div></div>
+                        <div class="text-center bg-emerald-600 p-2 rounded-xl"><div class="text-[7px] font-black text-emerald-100 uppercase">Usage</div><div class="text-[10px] font-mono-numbers font-black text-white">${fmt(r.usage)}</div></div>
                       </div>
                     </div>`;
                   }).join('')}
@@ -253,9 +254,9 @@
             `).join('')}
           </div>
 
-          <div class="fixed bottom-0 left-0 w-full p-4 bg-white/80 backdrop-blur-md border-t flex gap-3">
-             <button onclick="app.placeholderAction('PDF Report')" class="flex-1 bg-slate-900 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg">Download PDF</button>
-             <button onclick="app.placeholderAction('Official Logsheet Print')" class="flex-1 bg-blue-600 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg">Print Logsheet</button>
+          <div class="fixed bottom-0 left-0 w-full p-4 bg-white/80 backdrop-blur-md border-t border-emerald-100 flex gap-3">
+             <button onclick="app.placeholderAction('PDF Report')" class="flex-1 bg-emerald-900 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg italic">Export PDF</button>
+             <button onclick="app.placeholderAction('Logsheet Print')" class="flex-1 bg-emerald-600 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg italic">Print Logs</button>
           </div>
         </div>`;
       }
@@ -268,7 +269,7 @@
       }
 
       editFromDashboard(id) {
-        const pin = prompt("Enter Admin PIN to edit records:");
+        const pin = prompt("Enter Admin PIN:");
         if (pin === "abnpower") {
           const index = MOCK_EQUIPMENT.findIndex(e => e.id === id);
           if (index !== -1) { 
@@ -278,7 +279,7 @@
             this.render(); 
           }
         } else if (pin !== null) {
-          alert("❌ Incorrect PIN. Access Denied.");
+          alert("❌ Incorrect PIN.");
         }
       }
     }
