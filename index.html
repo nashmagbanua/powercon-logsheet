@@ -144,7 +144,7 @@
                    <input type="date" value="${this.state.date}" class="w-full px-5 py-4 bg-white rounded-3xl border-2 border-emerald-100 shadow-sm font-bold text-lg outline-none text-center text-emerald-900" onchange="app.state.date=this.value; app.syncWithCloud()">
                 </div>
                 <button onclick="app.start()" class="btn-touch w-full bg-emerald-600 text-white font-black py-6 rounded-3xl shadow-xl text-xl uppercase italic">Start Reading</button>
-                <button onclick="app.state.view='records';app.state.filterDate=app.state.date;app.syncWithCloud(app.state.date)" class="btn-touch w-full bg-emerald-900 text-white font-bold py-5 rounded-3xl uppercase tracking-widest text-sm text-emerald-400 italic font-black underline underline-offset-4 ">View Dashboard</button>
+                <button onclick="app.state.view='records';app.state.filterDate=app.state.date;app.syncWithCloud(app.state.date)" class="btn-touch w-full bg-emerald-900 text-white font-bold py-5 rounded-3xl uppercase tracking-widest text-sm text-emerald-400 italic font-black underline underline-offset-4 ">View Logsheets</button>
             </div>
             
             ${this.state.loading ? '<p class="mt-4 text-[10px] font-black animate-pulse text-emerald-600 uppercase tracking-widest">Syncing Cloud...</p>' : ''}
