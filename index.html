@@ -26,6 +26,17 @@
 </head>
 <body class="h-full text-slate-900 overflow-x-hidden">
   <div id="app" class="h-full w-full"></div>
+
+  <div id="nameModal" class="modal hidden" style="z-index: 2000;">
+    <div class="bg-white rounded-[2.5rem] p-8 w-full max-w-xs text-center border-4 border-emerald-500 shadow-2xl">
+        <div class="text-4xl mb-4">✍️</div>
+        <h3 class="text-xl font-black text-emerald-900 uppercase italic">Operator Name</h3>
+        <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-6">Enter your name to finalize log</p>
+        <input type="text" id="opNameInput" class="w-full bg-slate-100 p-4 rounded-2xl text-center font-black text-emerald-700 outline-none mb-6 uppercase" placeholder="NAME HERE...">
+        <button onclick="app.confirmFinalSave()" class="w-full bg-emerald-600 text-white py-4 rounded-2xl font-black uppercase italic shadow-lg btn-touch">Confirm & Sync</button>
+    </div>
+  </div>
+
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyCwtWs9YdZMojl1FwQNXbAF-QRhWCrlWMQ",
@@ -68,10 +79,6 @@
         this.init();
       }
 
-      placeholderAction(type) {
-        alert(`🚀 FEATURE PREVIEW:\n\nThis will generate the ${type} using the Nutriveb Official Template.\n\nStatus: Pending management approval for digital logsheet format.`);
-      }
-
       async init() { this.render(); await this.syncWithCloud(); }
 
       async syncWithCloud(targetDate = null) {
@@ -110,13 +117,11 @@
         const prev = parseFloat(parseFloat(prevInput || 0).toFixed(3));
         const usage = parseFloat((current - prev).toFixed(3));
 
-        // --- SMART VALIDATION (HISTORY BASED) ---
         const yest = this.state.yesterdayReadings[eq.id];
         const yestUsage = yest ? parseFloat(yest.usage || 0) : 0;
         
-        // Huli ang Typo: Kung ang usage ngayon ay sobra-sobra kaysa kahapon (e.g., 3x higher)
         if (yestUsage > 0 && usage > (yestUsage * 3)) {
-          if (!confirm(`⚠️ KAHINA-HINALA!\n\nUsage kahapon: ${fmt(yestUsage)}\nUsage ngayon: ${fmt(usage)}\n\nNapakalaki ng itinalon. Sigurado ka bang tama ang decimal/zero mo?`)) return;
+          if (!confirm(`⚠️ KAHINA-HINALA!\n\nUsage kahapon: ${fmt(yestUsage)}\nUsage ngayon: ${fmt(usage)}\n\nNapakalaki ng itinalon.`)) return;
         }
 
         if (current < prev) {
@@ -216,17 +221,30 @@
                </tbody>
              </table>
           </div>
-          <button onclick="app.finalCloudSave()" class="btn-touch w-full bg-emerald-600 text-white font-black py-7 rounded-3xl shadow-2xl text-xl uppercase italic mb-10 tracking-widest">Sync Final Data ✓</button>
+          <button onclick="app.openNameModal()" class="btn-touch w-full bg-emerald-600 text-white font-black py-7 rounded-3xl shadow-2xl text-xl uppercase italic mb-10 tracking-widest">Sync Final Data ✓</button>
         </div>`;
       }
 
-      async finalCloudSave() {
+      openNameModal() {
+          document.getElementById('nameModal').classList.remove('hidden');
+          document.getElementById('opNameInput').focus();
+      }
+
+      async confirmFinalSave() {
+        const opName = document.getElementById('opNameInput').value.trim();
+        if(!opName) return alert("Please enter operator name!");
+
         this.state.loading = true; this.render();
         const updates = {};
         this.state.sessionReadings.forEach(r => { if(r) updates[`/readings/${this.state.date}/${r.id}`] = r; });
+        
+        // Save operator name for that specific date
+        updates[`/readings/${this.state.date}/metadata`] = { operator: opName, timestamp: Date.now() };
+
         try {
           await db.ref().update(updates);
-          alert("✅ Nutriveb Records Updated!");
+          document.getElementById('nameModal').classList.add('hidden');
+          alert(`✅ Records Updated by ${opName}`);
           this.state.view = 'records';
           this.state.filterDate = this.state.date;
           await this.syncWithCloud(this.state.date);
@@ -236,17 +254,15 @@
 
       recordsHTML() {
         const cats = ["UTILITIES", "PROCESS", "BOTTLING", "LVSG 5 LOADS"];
-        
-        // --- GHOST BUSTER TOTAL LOGIC ---
         let total = 0;
         MOCK_EQUIPMENT.forEach(eq => {
           const r = this.state.cloudReadings[eq.id];
-          if (r && r.usage) {
-            total += parseFloat(r.usage);
-          }
+          if (r && r.usage) total += parseFloat(r.usage);
         });
+
+        const metadata = this.state.cloudReadings['metadata'] || {};
         
-        return `<div class="p-4 max-w-2xl mx-auto min-h-screen pb-32">
+        return `<div class="p-4 max-w-2xl mx-auto min-h-screen pb-40">
           <div class="flex justify-between items-center mb-4 pt-4">
             <button onclick="app.state.view='home';app.render()" class="font-black text-emerald-800/40 text-xs tracking-widest underline decoration-emerald-500">← HOME</button>
             <input type="date" value="${this.state.filterDate}" 
@@ -254,9 +270,18 @@
               class="bg-white px-3 py-1 rounded-xl border-2 border-emerald-100 font-bold text-xs shadow-sm text-emerald-700">
           </div>
 
-          <div class="bg-emerald-900 p-6 rounded-[2rem] shadow-xl border border-emerald-800 mb-6 text-center">
-            <h3 class="text-[9px] font-black text-emerald-400/60 uppercase tracking-widest mb-1 italic">Daily Consumption</h3>
-            <div class="text-4xl font-black text-white font-mono-numbers">${fmt(total)} <span class="text-sm text-emerald-400 uppercase">kWh</span></div>
+          <div class="bg-emerald-900 p-8 rounded-[2.5rem] shadow-xl border border-emerald-800 mb-6 text-center relative overflow-hidden">
+            <div class="absolute -top-10 -right-10 w-32 h-32 bg-emerald-500/10 rounded-full"></div>
+            
+            <h3 class="text-[9px] font-black text-emerald-400 uppercase tracking-[0.3em] mb-4 italic">Daily Power Consumption</h3>
+            <div class="text-5xl font-black text-white font-mono-numbers mb-4">${fmt(total)} <span class="text-sm text-emerald-400 uppercase">kWh</span></div>
+            
+            <div class="inline-block bg-white/10 backdrop-blur-sm px-6 py-2 rounded-2xl border border-white/5">
+                <p class="text-[8px] font-black text-emerald-300/60 uppercase tracking-widest mb-0.5">Logged By Operator</p>
+                <p class="text-sm font-black text-emerald-100 uppercase italic tracking-tight">
+                    ${metadata.operator ? '⭐ ' + metadata.operator : 'Waiting for Sync...'}
+                </p>
+            </div>
           </div>
 
           <div class="space-y-6 mb-12">
@@ -266,15 +291,12 @@
                 <div class="bg-white/90 backdrop-blur rounded-[2rem] shadow-sm border border-emerald-100 overflow-hidden divide-y divide-emerald-50">
                   ${MOCK_EQUIPMENT.filter(e => e.loc === cat).map(e => {
                     const r = this.state.cloudReadings[e.id] || { prev: 0, curr: 0, usage: 0 };
-                    
-                    // Visual Flag: Kung ang usage ay negative o sadyang suspicious
                     const isAbnormal = r.usage < 0 || (r.usage > (r.prev * 0.4) && r.prev > 0);
-
                     return `
                     <div class="p-5 ${isAbnormal ? 'bg-red-50' : 'active:bg-emerald-50'}" onclick="app.editFromDashboard('${e.id}')">
                       <div class="text-[11px] font-black ${isAbnormal ? 'text-red-600' : 'text-emerald-900'} uppercase mb-3 flex justify-between">
                         ${e.name} 
-                        ${isAbnormal ? '<span class="animate-pulse">⚠️ CHECK DATA</span>' : '<span class="text-[8px] text-emerald-400 italic underline font-black">Admin 🔒</span>'}
+                        ${isAbnormal ? '<span class="animate-pulse">⚠️ CHECK DATA</span>' : '<span class="text-[8px] text-emerald-400 italic font-black underline">Edit 🔒</span>'}
                       </div>
                       <div class="grid grid-cols-3 gap-2">
                         <div class="text-center bg-emerald-50/30 border border-emerald-50 p-2 rounded-xl"><div class="text-[7px] font-bold text-emerald-300 uppercase">Prev</div><div class="text-[10px] font-mono-numbers text-emerald-800">${fmt(r.prev)}</div></div>
@@ -289,10 +311,29 @@
           </div>
 
           <div class="fixed bottom-0 left-0 w-full p-4 bg-white/80 backdrop-blur-md border-t border-emerald-100 flex gap-3">
-             <button onclick="app.placeholderAction('PDF Report')" class="flex-1 bg-emerald-900 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg italic">Export PDF</button>
-             <button onclick="app.placeholderAction('Logsheet Print')" class="flex-1 bg-emerald-600 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg italic">Print Logs</button>
+              <button onclick="app.exportToExcel()" class="flex-1 bg-emerald-900 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg italic">Export Excel</button>
+              <button onclick="window.print()" class="flex-1 bg-emerald-600 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg italic">Print Logs</button>
           </div>
         </div>`;
+      }
+
+      exportToExcel() {
+        const date = this.state.filterDate;
+        let csv = "ID,Equipment Name,Location,Previous,Current,Usage\n";
+        MOCK_EQUIPMENT.forEach(eq => {
+            const r = this.state.cloudReadings[eq.id] || { prev: 0, curr: 0, usage: 0 };
+            csv += `${eq.id},"${eq.name}",${eq.loc},${r.prev},${r.curr},${r.usage}\n`;
+        });
+        
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", `PowerCon_Log_${date}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
       }
       
       editFromReview(i) { 
@@ -320,4 +361,4 @@
     const app = new PowerCon();
   </script>
 </body>
-</html> 
+</html>
