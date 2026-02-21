@@ -38,8 +38,9 @@
   </div>
 
   <script>
+    const isSystemActive = false; // Gawin mong 'true' kung gusto mo nang gamitin ulit C POWERCON
     const firebaseConfig = {
-      XXXXXX apiKey: "AIzaSyCwtWs9YdZMojl1FwQNXbAF-QRhWCrlWMQ",
+      apiKey: "AIzaSyCwtWs9YdZMojl1FwQNXbAF-QRhWCrlWMQ",
       authDomain: "powercon-nutriveb.firebaseapp.com",
       projectId: "powercon-nutriveb",
       storageBucket: "powercon-nutriveb.firebasestorage.app",
@@ -47,6 +48,12 @@
       appId: "1:780606101460:web:ce9b6c7b73bb756a5a6841",
       databaseURL: "https://powercon-nutriveb-default-rtdb.asia-southeast1.firebasedatabase.app"
     };
+    // checkpoint dito //
+    async function saveData() {
+    if (!isSystemActive) {
+        alert("Notice: Data recording is temporarily suspended for system recalibration. Please use manual logsheets.");
+        return; // Dito pa lang, titigil na ang code. Walang papasok sa Firebase.
+    }
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
@@ -359,6 +366,7 @@
       }
     }
     const app = new PowerCon();
+    }
   </script>
 </body>
 </html>
