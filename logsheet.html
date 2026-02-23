@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ABN Power Reading</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+    <style>
+        body {
+            font-family: 'Arial Narrow', Arial, sans-serif;
+            margin: 0; padding: 15px; color: black; font-size: 8pt;
+        }
+
+        /* --- HEADER --- */
+        .header-container { text-align: center; margin-bottom: 5px; }
+        .logo-text { font-weight: bold; font-size: 18pt; letter-spacing: 2px; }
+        .address-text { font-size: 8pt; margin-bottom: 5px; }
+        .report-title { font-size: 14pt; font-weight: bold; margin: 2px 0; }
+        
+        .meta-info { font-weight: bold; margin-bottom: 10px; }
+        .line-input { border-bottom: 1px solid black; display: inline-block; width: 200px; min-height: 15px; text-align: center;}
+
+        /* --- GRID --- */
+        .grid-wrapper {
+            display: flex;
+            width: 100%;
+            border: 1.5px solid black;
+            box-sizing: border-box;
+        }
+        
+        .column { 
+            flex: 1; 
+            border-right: 1px solid black;
+            display: flex;
+            flex-direction: column;
+        }
+        .column:last-child { border-right: none; }
+
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            table-layout: fixed; 
+        }
+        
+        th, td { 
+            border: 1px solid black; 
+            padding: 2px 4px; 
+            height: 25px; 
+            vertical-align: middle; 
+            text-align: center; /* CENTERED LAHAT NG DATA */
+        }
+
+        .col-name { width: 45%; text-align: left; font-weight: bold; }
+
+        /* --- THEMES (SAKTONG KULAY MO) --- */
+        .util-header { background-color: #7f7f7f; color: white; font-weight: bold; }
+        .proc-header { background-color: white; color: black; font-weight: bold; }
+        .bottling-header { background-color: #92d050; color: black; font-weight: bold; }
+        .lvsg-label { background-color: #c6d9f0; color: black; font-weight: bold; }
+        .lvsg-name { background-color: #c6d9f0; text-align: left; font-weight: bold; }
+        .sub-header { background-color: #f2f2f2; font-weight: bold; font-size: 7pt; }
+
+        /* --- REMARKS --- */
+        .remarks-row {
+            width: 100%;
+            border: 1.5px solid black;
+            border-top: none;
+            height: 28px;
+            padding-left: 5px;
+            display: flex;
+            align-items: center;
+            font-weight: bold;
+            box-sizing: border-box;
+        }
+
+        /* --- FOOTER --- */
+        .footer-container { margin-top: 20px; width: 100%; }
+        .supervisor-row { text-align: right; font-weight: bold; margin-bottom: 40px; }
+        .rev-row { text-align: right; font-size: 7.5pt; }
+
+        /* CONTROL PANEL (PARA SA PRINT PREVIEW) */
+        .no-print { background: #f2f2f2; padding: 10px; text-align: center; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 5px; }
+
+        @media print {
+            .no-print { display: none; }
+            .util-header, .bottling-header, .lvsg-label, .lvsg-name, .sub-header {
+                -webkit-print-color-adjust: exact;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="no-print">
+        <label>Reading Date: </label>
+        <input type="date" id="datePicker" onchange="fetchData(this.value)">
+        <button onclick="window.print()" style="margin-left: 20px; font-weight: bold;">PRINT LOGSHEET</button>
+    </div>
+
+    <div class="header-container">
+        <img src="logo.png" style="height: 70px; width: auto; margin-bottom: 5px; display: block; margin-left: auto; margin-right: auto;">
+        <div class="report-title">Daily Equipment Power Reading</div>
+    </div>
+
+    <div class="meta-info">
+        <div>Date: <span id="display-date" class="line-input"></span></div>
+        <div style="margin-top: 5px;">Shift/Operator: <span id="display-operator" class="line-input" style="width: 250px;"></span></div>
+    </div>
+
+    <div class="grid-wrapper">
+        <div class="column">
+            <table>
+                <thead>
+                    <tr><th colspan="4" class="util-header">Utilities</th></tr>
+                    <tr class="sub-header">
+                        <th class="col-name" rowspan="2">Equipment</th>
+                        <th colspan="2">Power Consumption</th>
+                        <th rowspan="2">Total Power Consumption</th>
+                    </tr>
+                    <tr class="sub-header"><th>6:00 AM</th><th>6:00 AM</th></tr>
+                </thead>
+                <tbody id="util-body"></tbody>
+            </table>
+        </div>
+
+        <div class="column">
+            <table>
+                <thead>
+                    <tr><th colspan="4" class="proc-header">Process</th></tr>
+                    <tr class="sub-header">
+                        <th class="col-name" rowspan="2">Equipment</th>
+                        <th colspan="2">Power Consumption</th>
+                        <th rowspan="2">Total Power Consumption</th>
+                    </tr>
+                    <tr class="sub-header"><th>6:00 AM</th><th>6:00 AM</th></tr>
+                </thead>
+                <tbody id="process-body"></tbody>
+                <thead>
+                    <tr><th colspan="4" class="bottling-header">Bottling</th></tr>
+                </thead>
+                <tbody id="bottling-body"></tbody>
+            </table>
+        </div>
+
+        <div class="column">
+            <table>
+                <thead>
+                    <tr><th colspan="4" class="lvsg-label">LVSG 5 Loads</th></tr>
+                    <tr class="sub-header">
+                        <th class="col-name" rowspan="2">Equipment</th>
+                        <th colspan="2">Power Consumption</th>
+                        <th rowspan="2">Total Power Consumption</th>
+                    </tr>
+                    <tr class="sub-header"><th>6:00 AM</th><th>6:00 AM</th></tr>
+                </thead>
+                <tbody id="lvsg-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="remarks-row">REMARKS:</div>
+
+    <div class="footer-container">
+        <div class="supervisor-row">Supervisor/s: ______________________________________________________</div>
+        <div class="rev-row">ABN1-NUD-L4-013 / Rev.00 / Effective: 04032018</div>
+    </div>
+
+    <script>
+        // 1. FIREBASE SETUP
+        const firebaseConfig = {
+            apiKey: "AIzaSyCwtWs9YdZMojl1FwQNXbAF-QRhWCrlWMQ",
+            authDomain: "powercon-nutriveb.firebaseapp.com",
+            projectId: "powercon-nutriveb",
+            databaseURL: "https://powercon-nutriveb-default-rtdb.asia-southeast1.firebasedatabase.app"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        // 2. DATA LIST (IDs galing sa App mo)
+        const groups = {
+            util: [
+                { id: '1', name: 'Refrigeration System' }, { id: '2', name: 'Clean Steam Generator' }, { id: '3', name: 'Bulk Chemical System' }, { id: '4', name: 'Condensate Return System' }, { id: '5', name: 'RVAC' }, { id: '6', name: 'BOILER' }, { id: '7', name: 'Compressed Dry Air (CDA)' }, { id: '8', name: 'Waste Water Treatment Plant (WWTP)' }, { id: '9', name: 'Water Treatment Plant (WTP)' }, { id: '10', name: 'Combined Water Storage (CWS)' }, { id: '11', name: 'Sump Pit Pump 1' }, { id: '12', name: 'Freezer & Cold Storage' }, { id: '13', name: 'CIP Line (E7)' }, { id: '14', name: 'Bottle Washer (E8)' }, { id: '15', name: 'Modular Labeller (E9)' }, { id: '16', name: 'Container Conveyor (E10)' }, { id: '17', name: 'Conveyor Lubrication (E11)' }
+            ],
+            process: [
+                { id: '18', name: 'Alwin Soy' }, { id: '19', name: 'Process MCC' }, { id: '20', name: 'Homogenizer' }, { id: '21', name: 'Soya Bean Pre-treatment & Handling' }, { id: '22', name: 'Sugar Dissolving' }
+            ],
+            bottling: [
+                { id: '23', name: 'Container Dryer (E1)' }, { id: '24', name: 'Packer (E2)' }, { id: '25', name: 'Unpacker (E3)' }, { id: '26', name: 'Container Depalettiser (E4)' }, { id: '27', name: 'Pack Washing (E5)' }, { id: '28', name: 'Inspector (E6)' }, { id: '29', name: 'Pack Conveyor (E12)' }, { id: '30', name: 'Ups' }, { id: '31', name: 'Wrap Around' }, { id: '32', name: 'Hydro Sterilizer' }, { id: '33', name: 'Filler' }
+            ],
+            lvsg: [
+                { id: '34', name: 'DPP' }, { id: '35', name: 'DLP' }, { id: '36', name: 'Warehouse' }, { id: '37', name: 'RVAC (220V)' }, { id: '38', name: 'WWTP (220V)' }, { id: '39', name: 'DP-WM' }, { id: '40', name: 'Sump Pit Pump 2' }, { id: '41', name: 'Accumulation Table' }
+            ]
+        };
+
+        async function fetchData(date) {
+            const snapshot = await db.ref('readings/' + date).once('value');
+            const cloudData = snapshot.val() || {};
+            
+            document.getElementById('display-date').innerText = date;
+            document.getElementById('display-operator').innerText = cloudData.metadata ? cloudData.metadata.operator : "";
+
+            renderTable('util-body', groups.util, cloudData, '');
+            renderTable('process-body', groups.process, cloudData, '');
+            renderTable('bottling-body', groups.bottling, cloudData, '#92d050'); 
+            renderTable('lvsg-body', groups.lvsg, cloudData, '#c6d9f0'); 
+        }
+
+        function renderTable(targetId, list, cloudData, nameBg) {
+            const tbody = document.getElementById(targetId);
+            tbody.innerHTML = '';
+            list.forEach(eq => {
+                const r = cloudData[eq.id] || { prev: 0, curr: 0, usage: 0 };
+                const fmt = (val) => {
+                    const n = parseFloat(val || 0);
+                    return n === 0 ? "0" : n.toLocaleString(undefined, {minimumFractionDigits:3, maximumFractionDigits:3});
+                };
+                
+                const tr = document.createElement('tr');
+                const nameStyle = nameBg ? `style="background-color: ${nameBg}"` : '';
+                tr.innerHTML = `
+                    <td class="col-name" ${nameStyle}>${eq.name}</td>
+                    <td>${fmt(r.prev)}</td>
+                    <td>${fmt(r.curr)}</td>
+                    <td style="font-weight:bold">${fmt(r.usage)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Auto-load Today
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('datePicker').value = today;
+        fetchData(today);
+    </script>
+</body>
+</html>
