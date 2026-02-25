@@ -1,37 +1,44 @@
+
 <!doctype html>
 <html lang="en" class="h-full">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>POWERCON Cloud - Nutribeu</title>
+  <title>ABN-PowerConsumption</title>
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16x16.png">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
-  
   <style>
     .font-mono-numbers { font-family: ui-monospace, monospace; font-variant-numeric: tabular-nums; }
-    
-    /* Background Image Setup */
     body { 
-      background-image: linear-gradient(rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.85)), url('./assets/bg.jpg');
-      background-size: cover;
-      background-position: center;
-      background-attachment: fixed;
+      background-image: linear-gradient(rgba(240, 249, 246, 0.7), rgba(240, 249, 246, 0.7)), url('./assets/bg.jpg');
+      background-size: cover; background-position: center; background-attachment: fixed;
     }
-
-    .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.95); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 0.75rem; }
-    .modal-content { background: white; border-radius: 2rem; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
+    input[type="date"] { display: block; -webkit-appearance: none; min-height: 4rem; width: 100%; }
+    .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(6, 78, 59, 0.95); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 0.75rem; }
+    .modal-content { background: white; border-radius: 2.5rem; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; border: 4px solid #10b981; }
     .btn-touch:active { transform: scale(0.96); opacity: 0.9; }
-    
-    /* Mobile Input Fix */
-    input[type="date"], input[type="number"] { -webkit-appearance: none; min-height: 3.5rem; }
+    input:disabled { color: #94a3b8; background-color: #f1f5f9; cursor: not-allowed; opacity: 1; -webkit-text-fill-color: #64748b; }
+    .progress-fill { transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
   </style>
 </head>
 <body class="h-full text-slate-900 overflow-x-hidden">
   <div id="app" class="h-full w-full"></div>
 
+  <div id="nameModal" class="modal hidden" style="z-index: 2000;">
+    <div class="bg-white rounded-[2.5rem] p-8 w-full max-w-xs text-center border-4 border-emerald-500 shadow-2xl">
+        <div class="text-4xl mb-4">✍️</div>
+        <h3 class="text-xl font-black text-emerald-900 uppercase italic">Operator Name</h3>
+        <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-6">Enter your name to finalize log</p>
+        <input type="text" id="opNameInput" class="w-full bg-slate-100 p-4 rounded-2xl text-center font-black text-emerald-700 outline-none mb-6 uppercase" placeholder="NAME HERE...">
+        <button onclick="app.confirmFinalSave()" class="w-full bg-emerald-600 text-white py-4 rounded-2xl font-black uppercase italic shadow-lg btn-touch">Confirm & Sync</button>
+    </div>
+  </div>
+
   <script>
-    // --- YOUR FIREBASE CONFIG ---
     const firebaseConfig = {
       apiKey: "AIzaSyCwtWs9YdZMojl1FwQNXbAF-QRhWCrlWMQ",
       authDomain: "powercon-nutriveb.firebaseapp.com",
@@ -41,186 +48,256 @@
       appId: "1:780606101460:web:ce9b6c7b73bb756a5a6841",
       databaseURL: "https://powercon-nutriveb-default-rtdb.asia-southeast1.firebasedatabase.app"
     };
-
+    
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-
     const MOCK_EQUIPMENT = [
-      { id: '1', name: 'Refrigeration System', loc: 'UTILITIES' }, { id: '2', name: 'Clean Steam Generator', loc: 'UTILITIES' }, { id: '3', name: 'Bulk Chemical System', loc: 'UTILITIES' }, { id: '4', name: 'Condensate Return System', loc: 'UTILITIES' }, { id: '5', name: 'RVAC', loc: 'UTILITIES' }, { id: '6', name: 'BOILER', loc: 'UTILITIES' }, { id: '7', name: 'Compressed Dry Air (CDA)', loc: 'UTILITIES' }, { id: '8', name: 'Waste Water Treatment Plant (WWTP)', loc: 'UTILITIES' }, { id: '9', name: 'Water Treatment Plant (WTP)', loc: 'UTILITIES' }, { id: '10', name: 'Combined Water Storage (CWS)', loc: 'UTILITIES' }, { id: '11', name: 'Sump Pit Pump 1', loc: 'UTILITIES' }, { id: '12', name: 'Freezer & Cold Storage', loc: 'UTILITIES' }, { id: '13', name: 'CIP Line (E7)', loc: 'PROCESS' }, { id: '14', name: 'Bottle Washer (E8)', loc: 'PROCESS' }, { id: '15', name: 'Modular Labeller (E9)', loc: 'PROCESS' }, { id: '16', name: 'Container Conveyor (E10)', loc: 'PROCESS' }, { id: '17', name: 'Conveyor Lubrication (E11)', loc: 'PROCESS' }, { id: '18', name: 'Alwin Soy', loc: 'PROCESS' }, { id: '19', name: 'Process MCC', loc: 'PROCESS' }, { id: '20', name: 'Homogenizer', loc: 'PROCESS' }, { id: '21', name: 'Soya Bean Pre-treatment & Handling', loc: 'PROCESS' }, { id: '22', name: 'Sugar Dissolving', loc: 'PROCESS' }, { id: '23', name: 'Container Dryer (E1)', loc: 'BOTTLING' }, { id: '24', name: 'Packer (E2)', loc: 'BOTTLING' }, { id: '25', name: 'Unpacker (E3)', loc: 'BOTTLING' }, { id: '26', name: 'Container Depalettiser (E4)', loc: 'BOTTLING' }, { id: '27', name: 'Pack Washing (E5)', loc: 'BOTTLING' }, { id: '28', name: 'Inspector (E6)', loc: 'BOTTLING' }, { id: '29', name: 'Pack Conveyor (E12)', loc: 'BOTTLING' }, { id: '30', name: 'Ups', loc: 'BOTTLING' }, { id: '31', name: 'Wrap Round', loc: 'BOTTLING' }, { id: '32', name: 'Hydro Sterilizer', loc: 'BOTTLING' }, { id: '33', name: 'Filler', loc: 'BOTTLING' }, { id: '34', name: 'DPP', loc: 'LVSG 5 LOADS' }, { id: '35', name: 'DLP', loc: 'LVSG 5 LOADS' }, { id: '36', name: 'WareHouse', loc: 'LVSG 5 LOADS' }, { id: '37', name: 'RVAC (220V)', loc: 'LVSG 5 LOADS' }, { id: '38', name: 'WWTP (220V)', loc: 'LVSG 5 LOADS' }, { id: '39', name: 'DP-WM', loc: 'LVSG 5 LOADS' }, { id: '40', name: 'Sumppit Pump2', loc: 'LVSG 5 LOADS' }, { id: '41', name: 'Accumulation Table', loc: 'LVSG 5 LOADS' }
+    { id: '1', name: 'Refrigeration System', loc: 'UTILITIES' }, { id: '2', name: 'Clean Steam Generator', loc: 'UTILITIES' }, { id: '3', name: 'Bulk Chemical System', loc: 'UTILITIES' }, { id: '4', name: 'Condensate Return System', loc: 'UTILITIES' }, { id: '5', name: 'RVAC', loc: 'UTILITIES' }, { id: '6', name: 'BOILER', loc: 'UTILITIES' }, { id: '7', name: 'Compressed Dry Air (CDA)', loc: 'UTILITIES' }, { id: '8', name: 'Waste Water Treatment Plant (WWTP)', loc: 'UTILITIES' }, { id: '9', name: 'Water Treatment Plant (WTP)', loc: 'UTILITIES' }, { id: '10', name: 'Combined Water Storage (CWS)', loc: 'UTILITIES' }, { id: '11', name: 'Sump Pit Pump 1', loc: 'UTILITIES' }, { id: '12', name: 'Freezer & Cold Storage', loc: 'UTILITIES' }, { id: '13', name: 'CIP Line (E7)', loc: 'PROCESS' }, { id: '14', name: 'Bottle Washer (E8)', loc: 'PROCESS' }, { id: '15', name: 'Modular Labeller (E9)', loc: 'PROCESS' }, { id: '16', name: 'Container Conveyor (E10)', loc: 'PROCESS' }, { id: '17', name: 'Conveyor Lubrication (E11)', loc: 'PROCESS' }, { id: '18', name: 'Alwin Soy', loc: 'PROCESS' }, { id: '19', name: 'Process MCC', loc: 'PROCESS' }, { id: '20', name: 'Homogenizer', loc: 'PROCESS' }, { id: '21', name: 'Soya Bean Pre-treatment & Handling', loc: 'PROCESS' }, { id: '22', name: 'Sugar Dissolving', loc: 'PROCESS' }, { id: '23', name: 'Container Dryer (E1)', loc: 'BOTTLING' }, { id: '24', name: 'Packer (E2)', loc: 'BOTTLING' }, { id: '25', name: 'Unpacker (E3)', loc: 'BOTTLING' }, { id: '26', name: 'Container Depalettiser (E4)', loc: 'BOTTLING' }, { id: '27', name: 'Pack Washing (E5)', loc: 'BOTTLING' }, { id: '28', name: 'Inspector (E6)', loc: 'BOTTLING' }, { id: '29', name: 'Pack Conveyor (E12)', loc: 'BOTTLING' }, { id: '30', name: 'Ups', loc: 'BOTTLING' }, { id: '31', name: 'Wrap Round', loc: 'BOTTLING' }, { id: '32', name: 'Hydro Sterilizer', loc: 'BOTTLING' }, { id: '33', name: 'Filler', loc: 'BOTTLING' }, { id: '34', name: 'DPP', loc: 'LVSG 5 LOADS' }, { id: '35', name: 'DLP', loc: 'LVSG 5 LOADS' }, { id: '36', name: 'WareHouse', loc: 'LVSG 5 LOADS' }, { id: '37', name: 'RVAC (220V)', loc: 'LVSG 5 LOADS' }, { id: '38', name: 'WWTP (220V)', loc: 'LVSG 5 LOADS' }, { id: '39', name: 'DP-WM', loc: 'LVSG 5 LOADS' }, { id: '40', name: 'Sumppit Pump2', loc: 'LVSG 5 LOADS' }, { id: '41', name: 'Accumulation Table', loc: 'LVSG 5 LOADS' }
     ];
+
+    const fmt = (num) => (num || 0).toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+    const getLocalDate = (d) => {
+    const offset = d.getTimezoneOffset();
+    const localDate = new Date(d.getTime() - (offset * 60 * 1000));
+    return localDate.toISOString().split('T')[0];
+    };
 
     class PowerCon {
       constructor() {
+        const today = new Date();
         this.state = {
-          view: 'home', currentIndex: 0, 
-          date: new Date().toISOString().split('T')[0],
-          filterDate: new Date().toISOString().split('T')[0],
+          view: 'home', currentIndex: 0,
+          date: getLocalDate(today),
+          filterDate: getLocalDate(today),
           sessionReadings: [],
           cloudReadings: {},
-          loading: false
+          yesterdayReadings: {},
+          loading: false,
+          isSingleEdit: false 
         };
         this.init();
       }
 
-      async init() {
-        this.render();
-        await this.syncWithCloud();
-      }
-
-      async syncWithCloud() {
+      async init() { this.render(); await this.syncWithCloud(); }
+      async syncWithCloud(targetDate = null) {
         this.state.loading = true; this.render();
-        const snapshot = await db.ref('readings/' + this.state.filterDate).once('value');
+        const dateToQuery = targetDate || this.state.date;
+        const snapshot = await db.ref('readings/' + dateToQuery).once('value');
         this.state.cloudReadings = snapshot.val() || {};
+        const d = new Date(dateToQuery);
+        d.setDate(d.getDate() - 1);
+        const yKey = getLocalDate(d);
+        const ySnap = await db.ref('readings/' + yKey).once('value');
+        this.state.yesterdayReadings = ySnap.val() || {};
+        MOCK_EQUIPMENT.forEach((eq, i) => {
+            if(this.state.cloudReadings[eq.id]) this.state.sessionReadings[i] = this.state.cloudReadings[eq.id];
+        });
         this.state.loading = false; this.render();
       }
 
-      start() {
-        this.state.sessionReadings = [];
-        this.state.currentIndex = 0;
-        this.state.view = 'reading';
-        this.render();
+      async start() { 
+        await this.syncWithCloud();
+        this.state.isSingleEdit = false;
+        let firstEmpty = 0;
+        for(let i=0; i<MOCK_EQUIPMENT.length; i++) {
+        if(!this.state.cloudReadings[MOCK_EQUIPMENT[i].id]) { firstEmpty = i; break; }
+        }
+        this.state.currentIndex = firstEmpty;
+        this.state.view = 'reading'; 
+        this.render(); 
       }
 
       async saveReading(curr, prevInput) {
         const eq = MOCK_EQUIPMENT[this.state.currentIndex];
-        const current = parseFloat(curr);
+        const current = parseFloat(parseFloat(curr).toFixed(3));
+        const prev = parseFloat(parseFloat(prevInput || 0).toFixed(3));
+        const usage = parseFloat((current - prev).toFixed(3));
+
+        const yest = this.state.yesterdayReadings[eq.id];
+        const yestUsage = yest ? parseFloat(yest.usage || 0) : 0;
         
-        // Auto-fetch yesterday's data as default if no input
-        let prev = prevInput ? parseFloat(prevInput) : 0;
-        if (!prevInput) {
-          const yesterday = new Date(this.state.date);
-          yesterday.setDate(yesterday.getDate() - 1);
-          const yKey = yesterday.toISOString().split('T')[0];
-          const ySnap = await db.ref(`readings/${yKey}/${eq.id}`).once('value');
-          prev = ySnap.exists() ? ySnap.val().curr : 0;
+        if (yestUsage > 0 && usage > (yestUsage * 3)) {
+          if (!confirm(`⚠️ KAHINA-HINALA!\n\nUsage kahapon: ${fmt(yestUsage)}\nUsage ngayon: ${fmt(usage)}\n\nNapakalaki ng itinalon.`)) return;
         }
 
-        if (current < prev && !confirm("⚠️ ABNORMAL: Current is lower than Previous. Continue?")) return;
-
-        this.state.sessionReadings[this.state.currentIndex] = {
-          id: eq.id, name: eq.name, loc: eq.loc, curr: current, prev: prev, usage: current - prev
-        };
-
-        if (this.state.currentIndex < 40) {
-          this.state.currentIndex++;
-          this.render();
-        } else {
-          this.state.view = 'review';
-          this.render();
+        if (current < prev) {
+          if(!confirm("⚠️ ABNORMAL: Current is lower than Previous. Nag-reset ba ang metro?")) return;
         }
-      }
 
-      async finalCloudSave() {
-        this.state.loading = true; this.render();
-        const updates = {};
-        this.state.sessionReadings.forEach(r => {
-          updates[`/readings/${this.state.date}/${r.id}`] = r;
-        });
-        try {
-          await db.ref().update(updates);
-          alert("✅ Shared to Cloud Successfully!");
-          this.state.filterDate = this.state.date;
+        const data = { id: eq.id, name: eq.name, loc: eq.loc, curr: current, prev: prev, usage: usage };
+        this.state.sessionReadings[this.state.currentIndex] = data;
+
+        if (this.state.isSingleEdit) {
+          this.state.loading = true; this.render();
+          await db.ref(`readings/${this.state.filterDate}/${eq.id}`).set(data);
+          this.state.isSingleEdit = false;
           this.state.view = 'records';
-          await this.syncWithCloud();
-        } catch (e) { alert("Error: " + e.message); }
-        this.state.loading = false; this.render();
+          await this.syncWithCloud(this.state.filterDate);
+        } else {
+          if (this.state.currentIndex < MOCK_EQUIPMENT.length - 1) { this.state.currentIndex++; this.render(); } 
+          else { this.state.view = 'review'; this.render(); }
+        }
       }
 
       render() { document.getElementById('app').innerHTML = this[`${this.state.view}HTML`](); }
 
       homeHTML() {
-        return `<div class="p-6 max-w-sm mx-auto flex flex-col justify-center min-h-screen text-center">
-          <h1 class="text-6xl font-black text-slate-900 italic tracking-tighter mb-2">POWER<span class="text-blue-600">CON</span></h1>
-          <p class="text-slate-400 font-bold text-[10px] tracking-[0.4em] mb-12 uppercase italic">CALCULATOR APP</p>
-          
-          <div class="space-y-4 w-full px-2">
-            <div class="w-full">
-               <label class="text-[9px] font-black text-slate-400 uppercase mb-1 block text-left ml-4">Select Reading Date</label>
-               <input type="date" value="${this.state.date}" class="w-full p-5 bg-white rounded-3xl border-2 border-slate-100 shadow-sm font-bold text-lg outline-none mb-2" onchange="app.state.date=this.value">
+        const year = new Date().getFullYear();
+        return `
+        <div class="p-6 max-w-sm mx-auto flex flex-col justify-between min-h-screen text-center">
+            <div></div> 
+            <div>
+                <h1 class="text-6xl font-black text-emerald-900 italic tracking-tighter mb-2">POWER<span class="text-emerald-500">CON</span></h1>
+                <p class="text-emerald-400 font-bold text-[10px] tracking-[0.4em] mb-12 uppercase italic font-black">UTILITIES CALCULATOR</p>
+                <div class="flex flex-col gap-4 w-full">
+                    <div class="w-full text-left">
+                       <label class="text-[9px] font-black text-emerald-800/40 uppercase mb-1 block text-center tracking-widest">Reading Date</label>
+                       <input type="date" value="${this.state.date}" class="w-full px-5 py-4 bg-white rounded-3xl border-2 border-emerald-100 shadow-sm font-bold text-lg outline-none text-center text-emerald-900" onchange="app.state.date=this.value; app.syncWithCloud()">
+                    </div>
+                    <button onclick="app.start()" class="btn-touch w-full bg-emerald-600 text-white font-black py-6 rounded-3xl shadow-xl text-xl uppercase italic">Start Reading</button>
+                    <button onclick="app.state.view='records';app.state.filterDate=app.state.date;app.syncWithCloud(app.state.date)" class="btn-touch w-full bg-emerald-900 text-white font-bold py-5 rounded-3xl uppercase tracking-widest text-sm text-emerald-400 italic font-black underline underline-offset-4 ">View Logsheets</button>
+                </div>
+                ${this.state.loading ? '<p class="mt-4 text-[10px] font-black animate-pulse text-emerald-600 uppercase tracking-widest">Syncing Cloud...</p>' : ''}
             </div>
-            <button onclick="app.start()" class="btn-touch w-full bg-blue-600 text-white font-black py-6 rounded-3xl shadow-xl text-xl uppercase italic">Start Reading</button>
-            <button onclick="app.state.view='records';app.render()" class="btn-touch w-full bg-slate-900 text-white font-bold py-5 rounded-3xl uppercase tracking-widest text-sm">View LOGSHEET</button>
-          </div>
-          ${this.state.loading ? '<p class="mt-6 text-blue-500 font-bold animate-pulse text-xs">Connecting to Singapore Server...</p>' : ''}
+            <footer class="pb-4"><p class="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-800/30">&copy; ${year} Nutribev Corporation</p></footer>
         </div>`;
       }
 
       readingHTML() {
+        const total = MOCK_EQUIPMENT.length;
+        const progress = ((this.state.currentIndex + 1) / total) * 100;
         const eq = MOCK_EQUIPMENT[this.state.currentIndex];
-        return `<div class="modal"><div class="modal-content p-8 shadow-2xl">
-          <div class="flex justify-between items-center mb-6"><span class="text-[10px] font-black bg-blue-600 text-white px-3 py-1 rounded-full uppercase">${eq.loc}</span><span class="text-xs font-bold text-slate-300">${this.state.currentIndex+1}/41</span></div>
-          <h2 class="text-2xl font-black leading-tight mb-8">${eq.name}</h2>
+        const cloudData = this.state.cloudReadings[eq.id];
+        let autoPrev = (this.state.yesterdayReadings && this.state.yesterdayReadings[eq.id]) ? this.state.yesterdayReadings[eq.id].curr : '0.000';
+        const isPrevLocked = !this.state.isSingleEdit;
+        let currentVal = (this.state.isSingleEdit && cloudData) ? cloudData.curr : '';
+        if (this.state.isSingleEdit && cloudData) autoPrev = cloudData.prev;
+
+        return `<div class="modal"><div class="modal-content p-8 shadow-2xl relative overflow-hidden">
+          <div class="absolute top-0 left-0 w-full h-2 bg-emerald-50"><div class="h-full bg-emerald-500 progress-fill" style="width: ${progress}%"></div></div>
+          <div class="flex justify-between items-center mb-6 mt-4">
+            <span class="text-[10px] font-black bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full uppercase italic">${eq.loc}</span>
+            <span class="text-xs font-black text-emerald-600 font-mono-numbers">${this.state.currentIndex+1} / ${total}</span>
+          </div>
+          <h2 class="text-2xl font-black leading-tight mb-8 text-emerald-900">${eq.name}</h2>
           <form onsubmit="event.preventDefault(); app.saveReading(document.getElementById('c').value, document.getElementById('p').value)">
-            <div class="mb-4 p-4 bg-slate-50 rounded-2xl border">
-              <label class="text-[8px] font-black text-slate-400 uppercase">Manual Previous Override (Optional)</label>
-              <input type="number" id="p" step="0.01" class="w-full bg-transparent text-xl font-bold outline-none" placeholder="Leave blank to use history">
+            <div class="mb-4 p-4 ${isPrevLocked ? 'bg-slate-50' : 'bg-emerald-50 border-emerald-200 border-2'} rounded-2xl border text-left">
+              <label class="text-[8px] font-black text-emerald-400 uppercase tracking-widest italic flex justify-center mb-1">Previous Reading ${isPrevLocked ? '🔒' : '🔓'}</label>
+              <input type="number" id="p" step="0.001" class="w-full bg-transparent text-xl font-bold outline-none text-center text-emerald-900" value="${autoPrev}" ${isPrevLocked ? 'disabled' : ''}>
             </div>
-            <div class="mb-10">
-              <label class="text-[10px] font-black text-slate-400 uppercase mb-2 block font-bold">Current Reading</label>
-              <input type="number" id="c" step="0.01" class="w-full p-6 bg-slate-100 rounded-3xl text-4xl font-black outline-none font-mono-numbers shadow-inner" required autofocus>
+            <div class="mb-10 text-left">
+              <label class="text-[10px] font-black text-emerald-800/40 uppercase mb-2 block tracking-widest text-center">Current Reading</label>
+              <input type="number" id="c" step="0.001" class="w-full p-6 bg-emerald-50 rounded-3xl text-4xl font-black outline-none font-mono-numbers shadow-inner text-center text-emerald-600 border border-emerald-100" value="${currentVal}" placeholder="0.000" required autofocus>
             </div>
-            <div class="grid grid-cols-2 gap-4"><button type="button" onclick="app.state.view='home';app.render()" class="py-5 font-bold text-slate-400 uppercase text-xs">Exit</button><button type="submit" class="bg-blue-600 text-white font-black py-5 rounded-2xl shadow-xl uppercase">Next →</button></div>
+            <div class="grid grid-cols-2 gap-4">
+              <button type="button" onclick="app.exitReading()" class="py-5 font-bold text-emerald-300 uppercase text-xs">Exit</button>
+              <button type="submit" class="bg-emerald-600 text-white font-black py-5 rounded-2xl shadow-xl uppercase italic">Save & Next</button>
+            </div>
           </form>
         </div></div>`;
       }
 
+      exitReading() {
+        if (this.state.isSingleEdit) { this.state.view = 'records'; this.state.isSingleEdit = false; }
+        else { this.state.view = 'home'; }
+        this.render();
+      }
+
       reviewHTML() {
         return `<div class="p-6 max-w-2xl mx-auto flex flex-col min-h-screen">
-          <h2 class="text-4xl font-black mb-2 italic pt-10">Review</h2>
-          <p class="text-[10px] font-bold text-slate-400 uppercase mb-6 tracking-widest">Verify all 41 equipments</p>
-          <div class="bg-white rounded-[2.5rem] shadow-xl border overflow-hidden flex-1 mb-6 overflow-y-auto">
+          <h2 class="text-4xl font-black mb-6 italic pt-10 uppercase tracking-tighter text-emerald-900">Review Logs</h2>
+          <div class="bg-white rounded-[2.5rem] shadow-xl border border-emerald-100 overflow-hidden flex-1 mb-6 overflow-y-auto">
              <table class="w-full text-xs">
-               <tbody class="divide-y divide-slate-100">
-                 ${this.state.sessionReadings.map((r, i) => `
-                   <tr onclick="app.state.currentIndex=${i}; app.state.view='reading'; app.render()" class="active:bg-blue-50">
-                     <td class="p-4">
-                       <div class="font-black text-slate-800 uppercase text-[10px]">${r.name}</div>
-                       <div class="text-lg font-mono-numbers font-black ${r.curr < r.prev ? 'text-red-500' : 'text-blue-600'}">${r.curr.toLocaleString()}</div>
-                     </td>
-                     <td class="p-4 text-right">
-                        <div class="text-[8px] font-bold text-slate-300">USAGE</div>
-                        <div class="font-mono-numbers font-bold">${r.usage.toLocaleString()}</div>
-                     </td>
-                   </tr>`).join('')}
+               <tbody class="divide-y divide-emerald-50">
+                 ${this.state.sessionReadings.map((r, i) => r ? `
+                   <tr onclick="app.editFromReview(${i})" class="active:bg-emerald-50">
+                     <td class="p-4 font-black text-emerald-900 uppercase text-[9px] leading-tight">${r.name}</td>
+                     <td class="p-4 text-right font-mono-numbers font-black text-emerald-600">${fmt(r.curr)}</td>
+                   </tr>` : '').join('')}
                </tbody>
              </table>
           </div>
-          <button onclick="app.finalCloudSave()" class="btn-touch w-full bg-green-600 text-white font-black py-7 rounded-3xl shadow-2xl text-xl uppercase italic mb-10">
-            ${this.state.loading ? 'Syncing...' : 'Confirm & Sync to Cloud ✓'}
-          </button>
+          <button onclick="app.openNameModal()" class="btn-touch w-full bg-emerald-600 text-white font-black py-7 rounded-3xl shadow-2xl text-xl uppercase italic mb-10 tracking-widest">Sync Final Data ✓</button>
         </div>`;
+      }
+
+      openNameModal() {
+          document.getElementById('nameModal').classList.remove('hidden');
+          document.getElementById('opNameInput').focus();
+      }
+
+      async confirmFinalSave() {
+        const opName = document.getElementById('opNameInput').value.trim();
+        if(!opName) return alert("Please enter operator name!");
+
+        this.state.loading = true; this.render();
+        const updates = {};
+        this.state.sessionReadings.forEach(r => { if(r) updates[`/readings/${this.state.date}/${r.id}`] = r; });
+        
+        // Save operator name for that specific date
+        updates[`/readings/${this.state.date}/metadata`] = { operator: opName, timestamp: Date.now() };
+
+        try {
+          await db.ref().update(updates);
+          document.getElementById('nameModal').classList.add('hidden');
+          alert(`✅ Records Updated by ${opName}`);
+          this.state.view = 'records';
+          this.state.filterDate = this.state.date;
+          await this.syncWithCloud(this.state.date);
+        } catch (e) { alert("Error: " + e.message); }
+        this.state.loading = false; this.render();
       }
 
       recordsHTML() {
         const cats = ["UTILITIES", "PROCESS", "BOTTLING", "LVSG 5 LOADS"];
-        const data = Object.values(this.state.cloudReadings);
-        const total = data.reduce((s, r) => s + (r.usage || 0), 0);
+        let total = 0;
+        MOCK_EQUIPMENT.forEach(eq => {
+          const r = this.state.cloudReadings[eq.id];
+          if (r && r.usage) total += parseFloat(r.usage);
+        });
 
-        return `<div class="p-4 max-w-2xl mx-auto min-h-screen pb-24">
+        const metadata = this.state.cloudReadings['metadata'] || {};
+        
+        return `<div class="p-4 max-w-2xl mx-auto min-h-screen pb-40">
           <div class="flex justify-between items-center mb-4 pt-4">
-            <button onclick="app.state.view='home';app.render()" class="font-black text-slate-400 text-xs tracking-widest">← HOME</button>
-            <input type="date" value="${this.state.filterDate}" onchange="app.state.filterDate=this.value; app.syncWithCloud()" class="bg-white px-3 py-1 rounded-xl border-2 border-blue-100 font-bold text-xs shadow-sm">
-          </div>
-          
-          <div class="bg-white/80 backdrop-blur p-6 rounded-[2rem] shadow-xl border border-white mb-6 text-center">
-            <h3 class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Live Plant Usage</h3>
-            <div class="text-4xl font-black text-slate-900 font-mono-numbers">${total.toLocaleString()} <span class="text-sm text-slate-300 italic">kWh</span></div>
+            <button onclick="app.state.view='home';app.render()" class="font-black text-emerald-800/40 text-xs tracking-widest underline decoration-emerald-500">← HOME</button>
+            <input type="date" value="${this.state.filterDate}" 
+              onchange="app.state.filterDate=this.value; app.syncWithCloud(this.value)" 
+              class="bg-white px-3 py-1 rounded-xl border-2 border-emerald-100 font-bold text-xs shadow-sm text-emerald-700">
           </div>
 
-          <div class="space-y-6">
+          <div class="bg-emerald-900 p-8 rounded-[2.5rem] shadow-xl border border-emerald-800 mb-6 text-center relative overflow-hidden">
+            <div class="absolute -top-10 -right-10 w-32 h-32 bg-emerald-500/10 rounded-full"></div>
+            
+            <h3 class="text-[9px] font-black text-emerald-400 uppercase tracking-[0.3em] mb-4 italic">Daily Power Consumption</h3>
+            <div class="text-5xl font-black text-white font-mono-numbers mb-4">${fmt(total)} <span class="text-sm text-emerald-400 uppercase">kWh</span></div>
+            
+            <div class="inline-block bg-white/10 backdrop-blur-sm px-6 py-2 rounded-2xl border border-white/5">
+                <p class="text-[8px] font-black text-emerald-300/60 uppercase tracking-widest mb-0.5">Logged By Operator</p>
+                <p class="text-sm font-black text-emerald-100 uppercase italic tracking-tight">
+                    ${metadata.operator ? '⭐ ' + metadata.operator : 'Waiting for Sync...'}
+                </p>
+            </div>
+          </div>
+
+          <div class="space-y-6 mb-12">
             ${cats.map(cat => `
               <div>
-                <div class="px-4 mb-2 text-[10px] font-black text-slate-500 uppercase tracking-widest">${cat}</div>
-                <div class="bg-white/90 backdrop-blur rounded-3xl shadow-sm border border-slate-200 overflow-hidden divide-y">
+                <div class="px-4 mb-2 text-[10px] font-black text-emerald-800/40 uppercase tracking-widest">${cat}</div>
+                <div class="bg-white/90 backdrop-blur rounded-[2rem] shadow-sm border border-emerald-100 overflow-hidden divide-y divide-emerald-50">
                   ${MOCK_EQUIPMENT.filter(e => e.loc === cat).map(e => {
                     const r = this.state.cloudReadings[e.id] || { prev: 0, curr: 0, usage: 0 };
+                    const isAbnormal = r.usage < 0 || (r.usage > (r.prev * 0.4) && r.prev > 0);
                     return `
-                    <div class="p-5 active:bg-blue-50">
-                      <div class="text-[11px] font-black text-slate-800 uppercase mb-3 flex justify-between">${e.name} ${r.curr > 0 && r.curr < r.prev ? '<span class="text-red-500 italic">! ABNORMAL</span>' : ''}</div>
+                    <div class="p-5 ${isAbnormal ? 'bg-red-50' : 'active:bg-emerald-50'}" onclick="app.editFromDashboard('${e.id}')">
+                      <div class="text-[11px] font-black ${isAbnormal ? 'text-red-600' : 'text-emerald-900'} uppercase mb-3 flex justify-between">
+                        ${e.name} 
+                        ${isAbnormal ? '<span class="animate-pulse">⚠️ CHECK DATA</span>' : '<span class="text-[8px] text-emerald-400 italic font-black underline">Edit 🔒</span>'}
+                      </div>
                       <div class="grid grid-cols-3 gap-2">
-                        <div class="text-center bg-white border p-2 rounded-xl"><div class="text-[7px] font-bold text-slate-400">Previous</div><div class="text-[12px] font-mono-numbers">${r.prev.toLocaleString()}</div></div>
-                        <div class="text-center bg-white border p-2 rounded-xl"><div class="text-[7px] font-bold text-slate-400">Current</div><div class="text-[12px] font-mono-numbers font-black">${r.curr > 0 ? r.curr.toLocaleString() : '---'}</div></div>
-                        <div class="text-center bg-blue-600 p-2 rounded-xl"><div class="text-[7px] font-black text-blue-100">TOTAL kWh</div><div class="text-[12px] font-mono-numbers font-black text-white">${r.usage.toLocaleString()}</div></div>
+                        <div class="text-center bg-emerald-50/30 border border-emerald-50 p-2 rounded-xl"><div class="text-[7px] font-bold text-emerald-300 uppercase">Prev</div><div class="text-[10px] font-mono-numbers text-emerald-800">${fmt(r.prev)}</div></div>
+                        <div class="text-center bg-emerald-50/30 border border-emerald-50 p-2 rounded-xl"><div class="text-[7px] font-black text-emerald-500 uppercase italic">Curr</div><div class="text-[10px] font-mono-numbers font-black text-emerald-900">${fmt(r.curr)}</div></div>
+                        <div class="text-center ${isAbnormal ? 'bg-red-600' : 'bg-emerald-600'} p-2 rounded-xl"><div class="text-[7px] font-black text-white/50 uppercase">Usage</div><div class="text-[10px] font-mono-numbers font-black text-white">${fmt(r.usage)}</div></div>
                       </div>
                     </div>`;
                   }).join('')}
@@ -228,7 +305,59 @@
               </div>
             `).join('')}
           </div>
+
+          <div class="fixed bottom-0 left-0 w-full p-4 bg-white/80 backdrop-blur-md border-t border-emerald-100 flex gap-3">
+    <button onclick="app.exportToExcel()" 
+            class="flex-1 bg-emerald-900 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg italic">
+        Export Excel
+    </button>
+
+    <button onclick="window.open('logsheet.html?date=' + app.state.filterDate, '_blank')" 
+            class="flex-1 bg-blue-700 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg italic">
+        Print Logsheet
+    </button>
+</div>
         </div>`;
+      }
+
+      exportToExcel() {
+        const date = this.state.filterDate;
+        let csv = "ID,Equipment Name,Location,Previous,Current,Usage\n";
+        MOCK_EQUIPMENT.forEach(eq => {
+            const r = this.state.cloudReadings[eq.id] || { prev: 0, curr: 0, usage: 0 };
+            csv += `${eq.id},"${eq.name}",${eq.loc},${r.prev},${r.curr},${r.usage}\n`;
+        });
+        
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", `PowerCon_Log_${date}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+      
+      editFromReview(i) { 
+        this.state.isSingleEdit = false;
+        this.state.currentIndex = i; 
+        this.state.view = 'reading'; 
+        this.render(); 
+      }
+      editFromDashboard(id) {
+        const pin = prompt("Enter Admin PIN:");
+        if (pin === "abnpower") {
+          const index = MOCK_EQUIPMENT.findIndex(e => e.id === id);
+          if (index !== -1) { 
+            this.state.isSingleEdit = true;
+            this.state.currentIndex = index; 
+            this.state.view = 'reading'; 
+            this.render(); 
+          }
+        } else if (pin !== null) {
+          alert("❌ Incorrect PIN.");
+        }
       }
     }
     const app = new PowerCon();
