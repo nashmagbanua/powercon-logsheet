@@ -164,38 +164,76 @@
       }
 
       readingHTML() {
-        const total = MOCK_EQUIPMENT.length;
-        const progress = ((this.state.currentIndex + 1) / total) * 100;
-        const eq = MOCK_EQUIPMENT[this.state.currentIndex];
-        const cloudData = this.state.cloudReadings[eq.id];
-        let autoPrev = (this.state.yesterdayReadings && this.state.yesterdayReadings[eq.id]) ? this.state.yesterdayReadings[eq.id].curr : '0.000';
-        const isPrevLocked = !this.state.isSingleEdit;
-        let currentVal = (this.state.isSingleEdit && cloudData) ? cloudData.curr : '';
-        if (this.state.isSingleEdit && cloudData) autoPrev = cloudData.prev;
+  const total = MOCK_EQUIPMENT.length;
+  const progress = ((this.state.currentIndex + 1) / total) * 100;
+  const eq = MOCK_EQUIPMENT[this.state.currentIndex];
+  const cloudData = this.state.cloudReadings[eq.id];
+  let autoPrev = (this.state.yesterdayReadings && this.state.yesterdayReadings[eq.id]) ? this.state.yesterdayReadings[eq.id].curr : '0.000';
+  const isPrevLocked = !this.state.isSingleEdit;
+  let currentVal = (this.state.isSingleEdit && cloudData) ? cloudData.curr : '';
+  if (this.state.isSingleEdit && cloudData) autoPrev = cloudData.prev;
 
-        return `<div class="modal"><div class="modal-content p-8 shadow-2xl relative overflow-hidden">
-          <div class="absolute top-0 left-0 w-full h-2 bg-emerald-50"><div class="h-full bg-emerald-500 progress-fill" style="width: ${progress}%"></div></div>
-          <div class="flex justify-between items-center mb-6 mt-4">
-            <span class="text-[10px] font-black bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full uppercase italic">${eq.loc}</span>
-            <span class="text-xs font-black text-emerald-600 font-mono-numbers">${this.state.currentIndex+1} / ${total}</span>
-          </div>
-          <h2 class="text-2xl font-black leading-tight mb-8 text-emerald-900">${eq.name}</h2>
-          <form onsubmit="event.preventDefault(); app.saveReading(document.getElementById('c').value, document.getElementById('p').value)">
-            <div class="mb-4 p-4 ${isPrevLocked ? 'bg-slate-50' : 'bg-emerald-50 border-emerald-200 border-2'} rounded-2xl border text-left">
-              <label class="text-[8px] font-black text-emerald-400 uppercase tracking-widest italic flex justify-center mb-1">Previous Reading ${isPrevLocked ? '🔒' : '🔓'}</label>
-              <input type="number" id="p" step="0.001" class="w-full bg-transparent text-xl font-bold outline-none text-center text-emerald-900" value="${autoPrev}" ${isPrevLocked ? 'disabled' : ''}>
-            </div>
-            <div class="mb-10 text-left">
-              <label class="text-[10px] font-black text-emerald-800/40 uppercase mb-2 block tracking-widest text-center">Current Reading</label>
-              <input type="number" id="c" step="0.001" class="w-full p-6 bg-emerald-50 rounded-3xl text-4xl font-black outline-none font-mono-numbers shadow-inner text-center text-emerald-600 border border-emerald-100" value="${currentVal}" placeholder="0.000" required autofocus>
-            </div>
-            <div class="grid grid-cols-2 gap-4">
-              <button type="button" onclick="app.exitReading()" class="py-5 font-bold text-emerald-300 uppercase text-xs">Exit</button>
-              <button type="submit" class="bg-emerald-600 text-white font-black py-5 rounded-2xl shadow-xl uppercase italic">Save & Next</button>
-            </div>
-          </form>
-        </div></div>`;
-      }
+  return `
+  <div class="p-6 max-w-2xl mx-auto min-h-screen flex flex-col justify-start relative">
+    
+    <!-- Progress Bar -->
+    <div class="w-full h-2 bg-emerald-50 rounded-full mb-6 overflow-hidden">
+      <div class="h-full bg-emerald-500" style="width: ${progress}%"></div>
+    </div>
+
+    <!-- Equipment Info -->
+    <div class="flex justify-between items-center mb-6">
+      <span class="text-[10px] font-black bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full uppercase italic">${eq.loc}</span>
+      <span class="text-xs font-black text-emerald-600 font-mono-numbers">${this.state.currentIndex+1} / ${total}</span>
+    </div>
+    <h2 class="text-2xl font-black leading-tight mb-8 text-emerald-900">${eq.name}</h2>
+
+    <!-- Readings Form -->
+    <form onsubmit="event.preventDefault(); app.saveReading(document.getElementById('c').value, document.getElementById('p').value)">
+      <div class="mb-4 p-4 ${isPrevLocked ? 'bg-slate-50' : 'bg-emerald-50 border-emerald-200 border-2'} rounded-2xl border text-left">
+        <label class="text-[8px] font-black text-emerald-400 uppercase tracking-widest italic flex justify-center mb-1">
+          Previous Reading ${isPrevLocked ? '🔒' : '🔓'}
+        </label>
+        <input type="number" id="p" step="0.001" 
+          class="w-full bg-transparent text-xl font-bold outline-none text-center text-emerald-900"
+          value="${autoPrev}" ${isPrevLocked ? 'disabled' : ''} onclick="showNumPad('p')">
+      </div>
+
+      <div class="mb-10 text-left">
+        <label class="text-[10px] font-black text-emerald-800/40 uppercase mb-2 block tracking-widest text-center">
+          Current Reading
+        </label>
+        <input type="number" id="c" step="0.001" 
+          class="w-full p-6 bg-emerald-50 rounded-3xl text-4xl font-black outline-none font-mono-numbers shadow-inner text-center text-emerald-600 border border-emerald-100"
+          value="${currentVal}" placeholder="0.000" required autofocus onclick="showNumPad('c')">
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-6">
+        <button type="button" onclick="app.exitReading()" class="py-5 font-bold text-emerald-300 uppercase text-xs">Exit</button>
+        <button type="submit" class="bg-emerald-600 text-white font-black py-5 rounded-2xl shadow-xl uppercase italic">Save & Next</button>
+      </div>
+    </form>
+
+    <!-- Numeric Keypad -->
+    <div id="numPad" class="w-full grid grid-cols-3 gap-2 fixed bottom-0 left-0 p-4 bg-emerald-100 shadow-inner" style="display:none; z-index:5000;">
+      <button class="py-4 font-black text-emerald-900 rounded-2xl bg-white" onclick="addNum('1')">1</button>
+      <button class="py-4 font-black text-emerald-900 rounded-2xl bg-white" onclick="addNum('2')">2</button>
+      <button class="py-4 font-black text-emerald-900 rounded-2xl bg-white" onclick="addNum('3')">3</button>
+      <button class="py-4 font-black text-emerald-900 rounded-2xl bg-white" onclick="addNum('4')">4</button>
+      <button class="py-4 font-black text-emerald-900 rounded-2xl bg-white" onclick="addNum('5')">5</button>
+      <button class="py-4 font-black text-emerald-900 rounded-2xl bg-white" onclick="addNum('6')">6</button>
+      <button class="py-4 font-black text-emerald-900 rounded-2xl bg-white" onclick="addNum('7')">7</button>
+      <button class="py-4 font-black text-emerald-900 rounded-2xl bg-white" onclick="addNum('8')">8</button>
+      <button class="py-4 font-black text-emerald-900 rounded-2xl bg-white" onclick="addNum('9')">9</button>
+      <button class="py-4 font-black text-emerald-900 rounded-2xl bg-white" onclick="addNum('.')">.</button>
+      <button class="py-4 font-black text-emerald-900 rounded-2xl bg-white" onclick="addNum('0')">0</button>
+      <button class="py-4 font-black text-red-700 rounded-2xl bg-white" onclick="backspace()">⌫</button>
+      <button class="py-4 font-black text-blue-700 rounded-2xl bg-white" onclick="clearInput()">Clear</button>
+      <button class="col-span-3 py-4 bg-emerald-600 text-white font-black rounded-2xl" onclick="enterNext()">Enter / Next</button>
+    </div>
+  </div>
+  `;
+}
 
       exitReading() {
         if (this.state.isSingleEdit) { this.state.view = 'records'; this.state.isSingleEdit = false; }
@@ -319,7 +357,83 @@
 </div>
         </div>`;
       }
+      let activeInput = null;
 
+// Show keypad on input click
+function showNumPad(inputId) {
+  activeInput = document.getElementById(inputId);
+  document.getElementById('numPad').style.display = 'grid';
+  activeInput.focus();
+}
+
+// Add number or decimal
+function addNum(num) {
+  if (!activeInput) return;
+
+  let val = activeInput.value;
+
+  // Prevent multiple decimals
+  if (num === '.' && val.includes('.')) return;
+
+  val += num;
+
+  // Limit to 3 decimals if decimal exists
+  if (val.includes('.')) {
+    const parts = val.split('.');
+    if (parts[1].length > 3) return; // max 3 decimals
+  }
+
+  activeInput.value = val;
+}
+
+// Backspace
+function backspace() {
+  if (activeInput) activeInput.value = activeInput.value.slice(0, -1);
+}
+
+// Enter / Next functionality with auto-focus and 3-decimal formatting
+function enterNext() {
+  if (!activeInput) return;
+
+  const currInput = document.getElementById('c');
+  const prevInput = document.getElementById('p');
+
+  // Ensure 3-decimal formatting
+  if (currInput.value) currInput.value = parseFloat(currInput.value).toFixed(3);
+  if (prevInput.value) prevInput.value = parseFloat(prevInput.value).toFixed(3);
+
+  const currVal = currInput.value;
+  const prevVal = prevInput.value;
+
+  // Save current reading
+  app.saveReading(currVal, prevVal);
+
+  // Hide keypad temporarily
+  document.getElementById('numPad').style.display = 'none';
+  activeInput = null;
+
+  // Auto-focus next reading after save
+  setTimeout(() => {
+    const nextIndex = app.state.currentIndex;
+    if (nextIndex < MOCK_EQUIPMENT.length) {
+      const nextPrevInput = document.getElementById('p');
+      if (nextPrevInput) nextPrevInput.value = currVal; // auto-populate previous
+
+      const nextCurrInput = document.getElementById('c');
+      if (nextCurrInput) {
+        nextCurrInput.value = '';
+        showNumPad('c'); // show keypad and focus
+      }
+    }
+  }, 300);
+}
+// Clear the active input
+function clearInput() {
+  if (activeInput) {
+    activeInput.value = '0.000';
+    activeInput.focus();
+  }
+}
       exportToExcel() {
         const date = this.state.filterDate;
         let csv = "ID,Equipment Name,Location,Previous,Current,Usage\n";
