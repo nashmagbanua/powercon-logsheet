@@ -1,40 +1,39 @@
-
 <!doctype html>
 <html lang="en" class="h-full">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>ABN-PowerConsumption</title>
-  <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32x32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16x16.png">
+  <title>ABN-PowerCon</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
   <style>
     .font-mono-numbers { font-family: ui-monospace, monospace; font-variant-numeric: tabular-nums; }
     body { 
-      background-image: linear-gradient(rgba(240, 249, 246, 0.7), rgba(240, 249, 246, 0.7)), url('./assets/bg.jpg');
+      background-image: linear-gradient(rgba(240, 249, 246, 0.85), rgba(240, 249, 246, 0.85)), url('./assets/bg.jpg');
       background-size: cover; background-position: center; background-attachment: fixed;
     }
-    input[type="date"] { display: block; -webkit-appearance: none; min-height: 4rem; width: 100%; }
-    .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(6, 78, 59, 0.95); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 0.75rem; }
-    .modal-content { background: white; border-radius: 2.5rem; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; border: 4px solid #10b981; }
-    .btn-touch:active { transform: scale(0.96); opacity: 0.9; }
-    input:disabled { color: #94a3b8; background-color: #f1f5f9; cursor: not-allowed; opacity: 1; -webkit-text-fill-color: #64748b; }
-    .progress-fill { transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+    /* Keypad Slide Animation */
+    #numPad {
+      transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      touch-action: none;
+    }
+    .translate-y-full { transform: translateY(100%); }
+    .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(6, 78, 59, 0.95); display: flex; align-items: center; justify-content: center; z-index: 6000; padding: 1rem; }
+    input[type="date"] { -webkit-appearance: none; display: block; }
   </style>
 </head>
 <body class="h-full text-slate-900 overflow-x-hidden">
   <div id="app" class="h-full w-full"></div>
 
-  <div id="nameModal" class="modal hidden" style="z-index: 2000;">
+  <div id="nameModal" class="modal hidden">
     <div class="bg-white rounded-[2.5rem] p-8 w-full max-w-xs text-center border-4 border-emerald-500 shadow-2xl">
         <div class="text-4xl mb-4">✍️</div>
         <h3 class="text-xl font-black text-emerald-900 uppercase italic">Operator Name</h3>
-        <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-6">Enter your name to finalize log</p>
-        <input type="text" id="opNameInput" class="w-full bg-slate-100 p-4 rounded-2xl text-center font-black text-emerald-700 outline-none mb-6 uppercase" placeholder="NAME HERE...">
-        <button onclick="app.confirmFinalSave()" class="w-full bg-emerald-600 text-white py-4 rounded-2xl font-black uppercase italic shadow-lg btn-touch">Confirm & Sync</button>
+        <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-4">Select Recent or Type New</p>
+        <div id="recentNamesList"></div>
+        <input type="text" id="opNameInput" class="w-full bg-slate-100 p-4 rounded-2xl text-center font-black text-emerald-700 outline-none mb-6 uppercase border-2 border-transparent focus:border-emerald-500" placeholder="NAME HERE...">
+        <button onclick="app.confirmFinalSave()" class="w-full bg-emerald-600 text-white py-4 rounded-2xl font-black uppercase italic shadow-lg active:scale-95 transition-all">Confirm & Sync</button>
     </div>
   </div>
 
@@ -51,15 +50,16 @@
     
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
+
     const MOCK_EQUIPMENT = [
-    { id: '1', name: 'Refrigeration System', loc: 'UTILITIES' }, { id: '2', name: 'Clean Steam Generator', loc: 'UTILITIES' }, { id: '3', name: 'Bulk Chemical System', loc: 'UTILITIES' }, { id: '4', name: 'Condensate Return System', loc: 'UTILITIES' }, { id: '5', name: 'RVAC', loc: 'UTILITIES' }, { id: '6', name: 'BOILER', loc: 'UTILITIES' }, { id: '7', name: 'Compressed Dry Air (CDA)', loc: 'UTILITIES' }, { id: '8', name: 'Waste Water Treatment Plant (WWTP)', loc: 'UTILITIES' }, { id: '9', name: 'Water Treatment Plant (WTP)', loc: 'UTILITIES' }, { id: '10', name: 'Combined Water Storage (CWS)', loc: 'UTILITIES' }, { id: '11', name: 'Sump Pit Pump 1', loc: 'UTILITIES' }, { id: '12', name: 'Freezer & Cold Storage', loc: 'UTILITIES' }, { id: '13', name: 'CIP Line (E7)', loc: 'PROCESS' }, { id: '14', name: 'Bottle Washer (E8)', loc: 'PROCESS' }, { id: '15', name: 'Modular Labeller (E9)', loc: 'PROCESS' }, { id: '16', name: 'Container Conveyor (E10)', loc: 'PROCESS' }, { id: '17', name: 'Conveyor Lubrication (E11)', loc: 'PROCESS' }, { id: '18', name: 'Alwin Soy', loc: 'PROCESS' }, { id: '19', name: 'Process MCC', loc: 'PROCESS' }, { id: '20', name: 'Homogenizer', loc: 'PROCESS' }, { id: '21', name: 'Soya Bean Pre-treatment & Handling', loc: 'PROCESS' }, { id: '22', name: 'Sugar Dissolving', loc: 'PROCESS' }, { id: '23', name: 'Container Dryer (E1)', loc: 'BOTTLING' }, { id: '24', name: 'Packer (E2)', loc: 'BOTTLING' }, { id: '25', name: 'Unpacker (E3)', loc: 'BOTTLING' }, { id: '26', name: 'Container Depalettiser (E4)', loc: 'BOTTLING' }, { id: '27', name: 'Pack Washing (E5)', loc: 'BOTTLING' }, { id: '28', name: 'Inspector (E6)', loc: 'BOTTLING' }, { id: '29', name: 'Pack Conveyor (E12)', loc: 'BOTTLING' }, { id: '30', name: 'Ups', loc: 'BOTTLING' }, { id: '31', name: 'Wrap Round', loc: 'BOTTLING' }, { id: '32', name: 'Hydro Sterilizer', loc: 'BOTTLING' }, { id: '33', name: 'Filler', loc: 'BOTTLING' }, { id: '34', name: 'DPP', loc: 'LVSG 5 LOADS' }, { id: '35', name: 'DLP', loc: 'LVSG 5 LOADS' }, { id: '36', name: 'WareHouse', loc: 'LVSG 5 LOADS' }, { id: '37', name: 'RVAC (220V)', loc: 'LVSG 5 LOADS' }, { id: '38', name: 'WWTP (220V)', loc: 'LVSG 5 LOADS' }, { id: '39', name: 'DP-WM', loc: 'LVSG 5 LOADS' }, { id: '40', name: 'Sumppit Pump2', loc: 'LVSG 5 LOADS' }, { id: '41', name: 'Accumulation Table', loc: 'LVSG 5 LOADS' }
+      { id: '1', name: 'Refrigeration System', loc: 'UTILITIES' }, { id: '2', name: 'Clean Steam Generator', loc: 'UTILITIES' }, { id: '3', name: 'Bulk Chemical System', loc: 'UTILITIES' }, { id: '4', name: 'Condensate Return System', loc: 'UTILITIES' }, { id: '5', name: 'RVAC', loc: 'UTILITIES' }, { id: '6', name: 'BOILER', loc: 'UTILITIES' }, { id: '7', name: 'Compressed Dry Air (CDA)', loc: 'UTILITIES' }, { id: '8', name: 'Waste Water Treatment Plant (WWTP)', loc: 'UTILITIES' }, { id: '9', name: 'Water Treatment Plant (WTP)', loc: 'UTILITIES' }, { id: '10', name: 'Combined Water Storage (CWS)', loc: 'UTILITIES' }, { id: '11', name: 'Sump Pit Pump 1', loc: 'UTILITIES' }, { id: '12', name: 'Freezer & Cold Storage', loc: 'UTILITIES' }, { id: '13', name: 'CIP Line (E7)', loc: 'PROCESS' }, { id: '14', name: 'Bottle Washer (E8)', loc: 'PROCESS' }, { id: '15', name: 'Modular Labeller (E9)', loc: 'PROCESS' }, { id: '16', name: 'Container Conveyor (E10)', loc: 'PROCESS' }, { id: '17', name: 'Conveyor Lubrication (E11)', loc: 'PROCESS' }, { id: '18', name: 'Alwin Soy', loc: 'PROCESS' }, { id: '19', name: 'Process MCC', loc: 'PROCESS' }, { id: '20', name: 'Homogenizer', loc: 'PROCESS' }, { id: '21', name: 'Soya Bean Pre-treatment & Handling', loc: 'PROCESS' }, { id: '22', name: 'Sugar Dissolving', loc: 'PROCESS' }, { id: '23', name: 'Container Dryer (E1)', loc: 'BOTTLING' }, { id: '24', name: 'Packer (E2)', loc: 'BOTTLING' }, { id: '25', name: 'Unpacker (E3)', loc: 'BOTTLING' }, { id: '26', name: 'Container Depalettiser (E4)', loc: 'BOTTLING' }, { id: '27', name: 'Pack Washing (E5)', loc: 'BOTTLING' }, { id: '28', name: 'Inspector (E6)', loc: 'BOTTLING' }, { id: '29', name: 'Pack Conveyor (E12)', loc: 'BOTTLING' }, { id: '30', name: 'Ups', loc: 'BOTTLING' }, { id: '31', name: 'Wrap Round', loc: 'BOTTLING' }, { id: '32', name: 'Hydro Sterilizer', loc: 'BOTTLING' }, { id: '33', name: 'Filler', loc: 'BOTTLING' }, { id: '34', name: 'DPP', loc: 'LVSG 5 LOADS' }, { id: '35', name: 'DLP', loc: 'LVSG 5 LOADS' }, { id: '36', name: 'WareHouse', loc: 'LVSG 5 LOADS' }, { id: '37', name: 'RVAC (220V)', loc: 'LVSG 5 LOADS' }, { id: '38', name: 'WWTP (220V)', loc: 'LVSG 5 LOADS' }, { id: '39', name: 'DP-WM', loc: 'LVSG 5 LOADS' }, { id: '40', name: 'Sumppit Pump2', loc: 'LVSG 5 LOADS' }, { id: '41', name: 'Accumulation Table', loc: 'LVSG 5 LOADS' }
     ];
 
     const fmt = (num) => (num || 0).toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 3 });
     const getLocalDate = (d) => {
-    const offset = d.getTimezoneOffset();
-    const localDate = new Date(d.getTime() - (offset * 60 * 1000));
-    return localDate.toISOString().split('T')[0];
+      const offset = d.getTimezoneOffset();
+      const localDate = new Date(d.getTime() - (offset * 60 * 1000));
+      return localDate.toISOString().split('T')[0];
     };
 
     class PowerCon {
@@ -79,19 +79,23 @@
       }
 
       async init() { this.render(); await this.syncWithCloud(); }
+
       async syncWithCloud(targetDate = null) {
         this.state.loading = true; this.render();
         const dateToQuery = targetDate || this.state.date;
-        const snapshot = await db.ref('readings/' + dateToQuery).once('value');
-        this.state.cloudReadings = snapshot.val() || {};
-        const d = new Date(dateToQuery);
-        d.setDate(d.getDate() - 1);
-        const yKey = getLocalDate(d);
-        const ySnap = await db.ref('readings/' + yKey).once('value');
-        this.state.yesterdayReadings = ySnap.val() || {};
-        MOCK_EQUIPMENT.forEach((eq, i) => {
-            if(this.state.cloudReadings[eq.id]) this.state.sessionReadings[i] = this.state.cloudReadings[eq.id];
-        });
+        try {
+          const snapshot = await db.ref('readings/' + dateToQuery).once('value');
+          this.state.cloudReadings = snapshot.val() || {};
+          const d = new Date(dateToQuery);
+          d.setDate(d.getDate() - 1);
+          const yKey = getLocalDate(d);
+          const ySnap = await db.ref('readings/' + yKey).once('value');
+          this.state.yesterdayReadings = ySnap.val() || {};
+          
+          MOCK_EQUIPMENT.forEach((eq, i) => {
+              if(this.state.cloudReadings[eq.id]) this.state.sessionReadings[i] = this.state.cloudReadings[eq.id];
+          });
+        } catch(e) { console.error("Sync Error:", e); }
         this.state.loading = false; this.render();
       }
 
@@ -100,7 +104,7 @@
         this.state.isSingleEdit = false;
         let firstEmpty = 0;
         for(let i=0; i<MOCK_EQUIPMENT.length; i++) {
-        if(!this.state.cloudReadings[MOCK_EQUIPMENT[i].id]) { firstEmpty = i; break; }
+          if(!this.state.cloudReadings[MOCK_EQUIPMENT[i].id]) { firstEmpty = i; break; }
         }
         this.state.currentIndex = firstEmpty;
         this.state.view = 'reading'; 
@@ -109,16 +113,9 @@
 
       async saveReading(curr, prevInput) {
         const eq = MOCK_EQUIPMENT[this.state.currentIndex];
-        const current = parseFloat(parseFloat(curr).toFixed(3));
+        const current = parseFloat(parseFloat(curr || 0).toFixed(3));
         const prev = parseFloat(parseFloat(prevInput || 0).toFixed(3));
         const usage = parseFloat((current - prev).toFixed(3));
-
-        const yest = this.state.yesterdayReadings[eq.id];
-        const yestUsage = yest ? parseFloat(yest.usage || 0) : 0;
-        
-        if (yestUsage > 0 && usage > (yestUsage * 3)) {
-          if (!confirm(`⚠️ KAHINA-HINALA!\n\nUsage kahapon: ${fmt(yestUsage)}\nUsage ngayon: ${fmt(usage)}\n\nNapakalaki ng itinalon.`)) return;
-        }
 
         if (current < prev) {
           if(!confirm("⚠️ ABNORMAL: Current is lower than Previous. Nag-reset ba ang metro?")) return;
@@ -134,15 +131,19 @@
           this.state.view = 'records';
           await this.syncWithCloud(this.state.filterDate);
         } else {
-          if (this.state.currentIndex < MOCK_EQUIPMENT.length - 1) { this.state.currentIndex++; this.render(); } 
-          else { this.state.view = 'review'; this.render(); }
+          if (this.state.currentIndex < MOCK_EQUIPMENT.length - 1) { 
+            this.state.currentIndex++; 
+            this.render(); 
+          } else { 
+            this.state.view = 'review'; 
+            this.render(); 
+          }
         }
       }
 
       render() { document.getElementById('app').innerHTML = this[`${this.state.view}HTML`](); }
 
       homeHTML() {
-        const year = new Date().getFullYear();
         return `
         <div class="p-6 max-w-sm mx-auto flex flex-col justify-between min-h-screen text-center">
             <div></div> 
@@ -154,89 +155,108 @@
                        <label class="text-[9px] font-black text-emerald-800/40 uppercase mb-1 block text-center tracking-widest">Reading Date</label>
                        <input type="date" value="${this.state.date}" class="w-full px-5 py-4 bg-white rounded-3xl border-2 border-emerald-100 shadow-sm font-bold text-lg outline-none text-center text-emerald-900" onchange="app.state.date=this.value; app.syncWithCloud()">
                     </div>
-                    <button onclick="app.start()" class="btn-touch w-full bg-emerald-600 text-white font-black py-6 rounded-3xl shadow-xl text-xl uppercase italic">Start Reading</button>
-                    <button onclick="app.state.view='records';app.state.filterDate=app.state.date;app.syncWithCloud(app.state.date)" class="btn-touch w-full bg-emerald-900 text-white font-bold py-5 rounded-3xl uppercase tracking-widest text-sm text-emerald-400 italic font-black underline underline-offset-4 ">View Logsheets</button>
+                    <button onclick="app.start()" class="w-full bg-emerald-600 text-white font-black py-6 rounded-3xl shadow-xl text-xl uppercase italic active:scale-95 transition-all">Start Reading</button>
+                    <button onclick="app.state.view='records';app.state.filterDate=app.state.date;app.syncWithCloud(app.state.date)" class="w-full bg-emerald-900 text-white font-bold py-5 rounded-3xl uppercase tracking-widest text-sm text-emerald-400 italic font-black underline underline-offset-4 active:scale-95 transition-all">View Logsheets</button>
                 </div>
                 ${this.state.loading ? '<p class="mt-4 text-[10px] font-black animate-pulse text-emerald-600 uppercase tracking-widest">Syncing Cloud...</p>' : ''}
             </div>
-            <footer class="pb-4"><p class="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-800/30">&copy; ${year} Nutribev Corporation</p></footer>
+            <footer class="pb-4"><p class="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-800/30">&copy; Nutribev Corporation</p></footer>
         </div>`;
       }
 
       readingHTML() {
         const total = MOCK_EQUIPMENT.length;
-        const progress = ((this.state.currentIndex + 1) / total) * 100;
         const eq = MOCK_EQUIPMENT[this.state.currentIndex];
+        const progress = ((this.state.currentIndex + 1) / total) * 100;
         const cloudData = this.state.cloudReadings[eq.id];
         let autoPrev = (this.state.yesterdayReadings && this.state.yesterdayReadings[eq.id]) ? this.state.yesterdayReadings[eq.id].curr : '0.000';
         const isPrevLocked = !this.state.isSingleEdit;
-        let currentVal = (this.state.isSingleEdit && cloudData) ? cloudData.curr : '';
-        if (this.state.isSingleEdit && cloudData) autoPrev = cloudData.prev;
+        let currentVal = (this.state.isSingleEdit && cloudData) ? cloudData.curr : (this.state.sessionReadings[this.state.currentIndex]?.curr || '');
+        if(this.state.isSingleEdit && cloudData) autoPrev = cloudData.prev;
 
-        return `<div class="modal"><div class="modal-content p-8 shadow-2xl relative overflow-hidden">
-          <div class="absolute top-0 left-0 w-full h-2 bg-emerald-50"><div class="h-full bg-emerald-500 progress-fill" style="width: ${progress}%"></div></div>
-          <div class="flex justify-between items-center mb-6 mt-4">
-            <span class="text-[10px] font-black bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full uppercase italic">${eq.loc}</span>
-            <span class="text-xs font-black text-emerald-600 font-mono-numbers">${this.state.currentIndex+1} / ${total}</span>
+        return `
+        <div class="p-6 max-w-2xl mx-auto min-h-screen flex flex-col justify-start relative pb-96">
+          <div class="w-full h-1.5 bg-emerald-900/10 rounded-full mb-6 overflow-hidden">
+            <div class="h-full bg-emerald-500 shadow-[0_0_10px_#10b981]" style="width: ${progress}%"></div>
           </div>
-          <h2 class="text-2xl font-black leading-tight mb-8 text-emerald-900">${eq.name}</h2>
-          <form onsubmit="event.preventDefault(); app.saveReading(document.getElementById('c').value, document.getElementById('p').value)">
-            <div class="mb-4 p-4 ${isPrevLocked ? 'bg-slate-50' : 'bg-emerald-50 border-emerald-200 border-2'} rounded-2xl border text-left">
-              <label class="text-[8px] font-black text-emerald-400 uppercase tracking-widest italic flex justify-center mb-1">Previous Reading ${isPrevLocked ? '🔒' : '🔓'}</label>
-              <input type="number" id="p" step="0.001" class="w-full bg-transparent text-xl font-bold outline-none text-center text-emerald-900" value="${autoPrev}" ${isPrevLocked ? 'disabled' : ''}>
+          <div class="flex justify-between items-center mb-6">
+            <span class="text-[10px] font-black bg-emerald-900 text-emerald-400 px-3 py-1 rounded-lg uppercase tracking-tighter">${eq.loc}</span>
+            <span class="text-xs font-black text-emerald-600 font-mono-numbers">${this.state.currentIndex + 1} / ${total}</span>
+          </div>
+          <h2 class="text-3xl font-black leading-tight mb-8 text-emerald-950 tracking-tight">${eq.name}</h2>
+          <div class="space-y-4">
+            <div class="p-4 ${isPrevLocked ? 'bg-slate-100/50' : 'bg-emerald-50 border-emerald-400/30 border-2'} rounded-3xl border transition-all" onclick="${isPrevLocked ? '' : 'window.showNumPad(\'p\')'}">
+              <label class="text-[9px] font-black text-emerald-600/50 uppercase tracking-[0.2em] flex justify-center mb-2">Previous Log</label>
+              <input type="text" id="p" class="w-full bg-transparent text-2xl font-black outline-none text-center text-emerald-900/40" value="${autoPrev}" readonly>
             </div>
-            <div class="mb-10 text-left">
-              <label class="text-[10px] font-black text-emerald-800/40 uppercase mb-2 block tracking-widest text-center">Current Reading</label>
-              <input type="number" id="c" step="0.001" class="w-full p-6 bg-emerald-50 rounded-3xl text-4xl font-black outline-none font-mono-numbers shadow-inner text-center text-emerald-600 border border-emerald-100" value="${currentVal}" placeholder="0.000" required autofocus>
+            <div class="relative">
+              <label class="text-[10px] font-black text-emerald-900/30 uppercase mb-2 block tracking-widest text-center">Input Current Reading</label>
+              <input type="text" id="c" class="w-full p-8 bg-white rounded-[2.5rem] text-5xl font-black outline-none font-mono-numbers shadow-2xl shadow-emerald-200/50 text-center text-emerald-600 border-4 border-emerald-500" value="${currentVal}" placeholder="0.000" readonly onclick="window.showNumPad('c')">
             </div>
-            <div class="grid grid-cols-2 gap-4">
-              <button type="button" onclick="app.exitReading()" class="py-5 font-bold text-emerald-300 uppercase text-xs">Exit</button>
-              <button type="submit" class="bg-emerald-600 text-white font-black py-5 rounded-2xl shadow-xl uppercase italic">Save & Next</button>
+          </div>
+          <div class="grid grid-cols-2 gap-4 mt-8">
+            <button type="button" onclick="app.exitReading()" class="py-5 font-black text-emerald-800/30 uppercase text-[10px] tracking-widest">Cancel</button>
+            <button onclick="window.enterNext()" class="bg-emerald-900 text-emerald-400 font-black py-5 rounded-3xl shadow-xl uppercase italic tracking-wider active:scale-95 transition-all">Next Device ➔</button>
+          </div>
+
+          <div id="numPad" class="fixed bottom-0 left-0 w-full p-6 bg-emerald-950/95 backdrop-blur-xl grid grid-cols-3 gap-3 rounded-t-[3rem] shadow-[0_-20px_50px_rgba(6,78,59,0.3)] border-t border-emerald-400/20 translate-y-full" style="z-index: 5000;">
+            <div class="col-span-3 flex justify-between items-center mb-2 px-2">
+              <div class="w-10"></div>
+              <div class="w-12 h-1.5 bg-emerald-500/20 rounded-full"></div>
+              <button onclick="window.closeKeypad()" class="w-10 h-10 flex items-center justify-center bg-white/5 rounded-full text-emerald-400 font-bold active:scale-90 transition-all">✕</button>
             </div>
-          </form>
-        </div></div>`;
+            ${['1','2','3','4','5','6','7','8','9'].map(k => `<button class="h-16 text-2xl font-black text-emerald-50 rounded-2xl bg-emerald-800/40 border border-emerald-400/10 active:bg-emerald-500 active:scale-90 transition-all" onclick="window.addNum('${k}')">${k}</button>`).join('')}
+            <button class="h-16 text-xl font-black text-emerald-400 rounded-2xl bg-emerald-800/20 border border-emerald-400/10 active:bg-emerald-500" onclick="window.addNum('.')">.</button>
+            <button class="h-16 text-2xl font-black text-emerald-50 rounded-2xl bg-emerald-800/40 border border-emerald-400/10 active:bg-emerald-500" onclick="window.addNum('0')">0</button>
+            <button class="h-16 text-xl font-black text-red-400 rounded-2xl bg-red-900/20 border border-red-500/10 active:bg-red-500" onclick="window.backspace()">⌫</button>
+            <button class="col-span-3 py-6 mt-2 bg-emerald-500 text-emerald-950 font-black rounded-2xl uppercase italic tracking-widest shadow-[0_0_20px_rgba(16,185,129,0.4)] active:scale-95" onclick="window.enterNext()">Confirm Value</button>
+          </div>
+        </div>`;
       }
 
       exitReading() {
-        if (this.state.isSingleEdit) { this.state.view = 'records'; this.state.isSingleEdit = false; }
-        else { this.state.view = 'home'; }
+        this.state.view = this.state.isSingleEdit ? 'records' : 'home';
+        this.state.isSingleEdit = false;
         this.render();
       }
 
       reviewHTML() {
-        return `<div class="p-6 max-w-2xl mx-auto flex flex-col min-h-screen">
+        return `<div class="p-6 max-w-2xl mx-auto flex flex-col min-h-screen pb-10">
           <h2 class="text-4xl font-black mb-6 italic pt-10 uppercase tracking-tighter text-emerald-900">Review Logs</h2>
           <div class="bg-white rounded-[2.5rem] shadow-xl border border-emerald-100 overflow-hidden flex-1 mb-6 overflow-y-auto">
              <table class="w-full text-xs">
                <tbody class="divide-y divide-emerald-50">
-                 ${this.state.sessionReadings.map((r, i) => r ? `
-                   <tr onclick="app.editFromReview(${i})" class="active:bg-emerald-50">
-                     <td class="p-4 font-black text-emerald-900 uppercase text-[9px] leading-tight">${r.name}</td>
-                     <td class="p-4 text-right font-mono-numbers font-black text-emerald-600">${fmt(r.curr)}</td>
-                   </tr>` : '').join('')}
+                 ${this.state.sessionReadings.map((r, i) => r ? `<tr onclick="app.editFromReview(${i})" class="active:bg-emerald-50"><td class="p-4 font-black text-emerald-900 uppercase text-[9px] leading-tight">${r.name}</td><td class="p-4 text-right font-mono-numbers font-black text-emerald-600">${fmt(r.curr)}</td></tr>` : '').join('')}
                </tbody>
              </table>
           </div>
-          <button onclick="app.openNameModal()" class="btn-touch w-full bg-emerald-600 text-white font-black py-7 rounded-3xl shadow-2xl text-xl uppercase italic mb-10 tracking-widest">Sync Final Data ✓</button>
+          <button onclick="app.openNameModal()" class="w-full bg-emerald-600 text-white font-black py-7 rounded-3xl shadow-2xl text-xl uppercase italic active:scale-95 transition-all">Sync Final Data ✓</button>
         </div>`;
       }
 
       openNameModal() {
-          document.getElementById('nameModal').classList.remove('hidden');
+          const modal = document.getElementById('nameModal');
+          modal.classList.remove('hidden');
+          const recent = JSON.parse(localStorage.getItem('recentOperators') || '[]');
+          let recentHTML = '';
+          if (recent.length > 0) {
+              recentHTML = `<div class="mb-4 flex flex-wrap gap-2 justify-center">${recent.map(name => `<button onclick="document.getElementById('opNameInput').value='${name}'; app.confirmFinalSave()" class="text-[10px] bg-emerald-100 text-emerald-700 px-3 py-2 rounded-full font-black uppercase border border-emerald-200 active:scale-90 transition-all">${name}</button>`).join('')}</div>`;
+          }
+          document.getElementById('recentNamesList').innerHTML = recentHTML;
           document.getElementById('opNameInput').focus();
       }
 
       async confirmFinalSave() {
-        const opName = document.getElementById('opNameInput').value.trim();
+        const input = document.getElementById('opNameInput');
+        const opName = input.value.trim().toUpperCase();
         if(!opName) return alert("Please enter operator name!");
-
+        let recent = JSON.parse(localStorage.getItem('recentOperators') || '[]');
+        recent = [opName, ...recent.filter(n => n !== opName)].slice(0, 5);
+        localStorage.setItem('recentOperators', JSON.stringify(recent));
         this.state.loading = true; this.render();
         const updates = {};
         this.state.sessionReadings.forEach(r => { if(r) updates[`/readings/${this.state.date}/${r.id}`] = r; });
-        
-        // Save operator name for that specific date
         updates[`/readings/${this.state.date}/metadata`] = { operator: opName, timestamp: Date.now() };
-
         try {
           await db.ref().update(updates);
           document.getElementById('nameModal').classList.add('hidden');
@@ -255,111 +275,96 @@
           const r = this.state.cloudReadings[eq.id];
           if (r && r.usage) total += parseFloat(r.usage);
         });
-
         const metadata = this.state.cloudReadings['metadata'] || {};
-        
         return `<div class="p-4 max-w-2xl mx-auto min-h-screen pb-40">
           <div class="flex justify-between items-center mb-4 pt-4">
             <button onclick="app.state.view='home';app.render()" class="font-black text-emerald-800/40 text-xs tracking-widest underline decoration-emerald-500">← HOME</button>
-            <input type="date" value="${this.state.filterDate}" 
-              onchange="app.state.filterDate=this.value; app.syncWithCloud(this.value)" 
-              class="bg-white px-3 py-1 rounded-xl border-2 border-emerald-100 font-bold text-xs shadow-sm text-emerald-700">
+            <input type="date" value="${this.state.filterDate}" onchange="app.state.filterDate=this.value; app.syncWithCloud(this.value)" class="bg-white px-3 py-1 rounded-xl border-2 border-emerald-100 font-bold text-xs shadow-sm text-emerald-700">
           </div>
-
-          <div class="bg-emerald-900 p-8 rounded-[2.5rem] shadow-xl border border-emerald-800 mb-6 text-center relative overflow-hidden">
-            <div class="absolute -top-10 -right-10 w-32 h-32 bg-emerald-500/10 rounded-full"></div>
-            
+          <div class="bg-emerald-900 p-8 rounded-[2.5rem] shadow-xl border border-emerald-800 mb-6 text-center">
             <h3 class="text-[9px] font-black text-emerald-400 uppercase tracking-[0.3em] mb-4 italic">Daily Power Consumption</h3>
             <div class="text-5xl font-black text-white font-mono-numbers mb-4">${fmt(total)} <span class="text-sm text-emerald-400 uppercase">kWh</span></div>
-            
             <div class="inline-block bg-white/10 backdrop-blur-sm px-6 py-2 rounded-2xl border border-white/5">
-                <p class="text-[8px] font-black text-emerald-300/60 uppercase tracking-widest mb-0.5">Logged By Operator</p>
-                <p class="text-sm font-black text-emerald-100 uppercase italic tracking-tight">
-                    ${metadata.operator ? '⭐ ' + metadata.operator : 'Waiting for Sync...'}
-                </p>
+                <p class="text-[8px] font-black text-emerald-300/60 uppercase tracking-widest mb-0.5">Operator</p>
+                <p class="text-sm font-black text-emerald-100 uppercase italic tracking-tight">${metadata.operator || 'Pending...'}</p>
             </div>
           </div>
-
-          <div class="space-y-6 mb-12">
-            ${cats.map(cat => `
+          <div class="space-y-6 mb-12">${cats.map(cat => `
               <div>
                 <div class="px-4 mb-2 text-[10px] font-black text-emerald-800/40 uppercase tracking-widest">${cat}</div>
                 <div class="bg-white/90 backdrop-blur rounded-[2rem] shadow-sm border border-emerald-100 overflow-hidden divide-y divide-emerald-50">
                   ${MOCK_EQUIPMENT.filter(e => e.loc === cat).map(e => {
                     const r = this.state.cloudReadings[e.id] || { prev: 0, curr: 0, usage: 0 };
-                    const isAbnormal = r.usage < 0 || (r.usage > (r.prev * 0.4) && r.prev > 0);
-                    return `
-                    <div class="p-5 ${isAbnormal ? 'bg-red-50' : 'active:bg-emerald-50'}" onclick="app.editFromDashboard('${e.id}')">
-                      <div class="text-[11px] font-black ${isAbnormal ? 'text-red-600' : 'text-emerald-900'} uppercase mb-3 flex justify-between">
-                        ${e.name} 
-                        ${isAbnormal ? '<span class="animate-pulse">⚠️ CHECK DATA</span>' : '<span class="text-[8px] text-emerald-400 italic font-black underline">Edit 🔒</span>'}
-                      </div>
+                    return `<div class="p-5 active:bg-emerald-50" onclick="app.editFromDashboard('${e.id}')">
+                      <div class="text-[11px] font-black text-emerald-900 uppercase mb-3 flex justify-between">${e.name} <span class="text-[8px] text-emerald-400 italic font-black underline">Edit 🔒</span></div>
                       <div class="grid grid-cols-3 gap-2">
-                        <div class="text-center bg-emerald-50/30 border border-emerald-50 p-2 rounded-xl"><div class="text-[7px] font-bold text-emerald-300 uppercase">Prev</div><div class="text-[10px] font-mono-numbers text-emerald-800">${fmt(r.prev)}</div></div>
-                        <div class="text-center bg-emerald-50/30 border border-emerald-50 p-2 rounded-xl"><div class="text-[7px] font-black text-emerald-500 uppercase italic">Curr</div><div class="text-[10px] font-mono-numbers font-black text-emerald-900">${fmt(r.curr)}</div></div>
-                        <div class="text-center ${isAbnormal ? 'bg-red-600' : 'bg-emerald-600'} p-2 rounded-xl"><div class="text-[7px] font-black text-white/50 uppercase">Usage</div><div class="text-[10px] font-mono-numbers font-black text-white">${fmt(r.usage)}</div></div>
+                        <div class="text-center bg-emerald-50/30 p-2 rounded-xl"><div class="text-[7px] font-bold text-emerald-300 uppercase">Prev</div><div class="text-[10px] font-mono-numbers text-emerald-800">${fmt(r.prev)}</div></div>
+                        <div class="text-center bg-emerald-50/30 p-2 rounded-xl"><div class="text-[7px] font-black text-emerald-500 uppercase italic">Curr</div><div class="text-[10px] font-mono-numbers font-black text-emerald-900">${fmt(r.curr)}</div></div>
+                        <div class="text-center bg-emerald-600 p-2 rounded-xl"><div class="text-[7px] font-black text-white/50 uppercase">Usage</div><div class="text-[10px] font-mono-numbers font-black text-white">${fmt(r.usage)}</div></div>
                       </div>
                     </div>`;
                   }).join('')}
                 </div>
-              </div>
-            `).join('')}
+              </div>`).join('')}
           </div>
-
           <div class="fixed bottom-0 left-0 w-full p-4 bg-white/80 backdrop-blur-md border-t border-emerald-100 flex gap-3">
-    <button onclick="app.exportToExcel()" 
-            class="flex-1 bg-emerald-900 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg italic">
-        Export Excel
-    </button>
-
-    <button onclick="window.open('logsheet.html?date=' + app.state.filterDate, '_blank')" 
-            class="flex-1 bg-blue-700 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg italic">
-        Print Logsheet
-    </button>
-</div>
+            <button onclick="app.exportToExcel()" class="flex-1 bg-emerald-900 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg italic">Excel</button>
+            <button onclick="window.open('logsheet.html?date=' + app.state.filterDate, '_blank')" class="flex-1 bg-blue-700 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg italic">Print</button>
+          </div>
         </div>`;
       }
 
       exportToExcel() {
-        const date = this.state.filterDate;
         let csv = "ID,Equipment Name,Location,Previous,Current,Usage\n";
         MOCK_EQUIPMENT.forEach(eq => {
             const r = this.state.cloudReadings[eq.id] || { prev: 0, curr: 0, usage: 0 };
             csv += `${eq.id},"${eq.name}",${eq.loc},${r.prev},${r.curr},${r.usage}\n`;
         });
-        
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement("a");
-        const url = URL.createObjectURL(blob);
-        link.setAttribute("href", url);
-        link.setAttribute("download", `PowerCon_Log_${date}.csv`);
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
+        link.href = URL.createObjectURL(blob);
+        link.download = `PowerCon_Log_${this.state.filterDate}.csv`;
         link.click();
-        document.body.removeChild(link);
       }
-      
-      editFromReview(i) { 
-        this.state.isSingleEdit = false;
-        this.state.currentIndex = i; 
-        this.state.view = 'reading'; 
-        this.render(); 
-      }
+
+      editFromReview(i) { this.state.currentIndex = i; this.state.view = 'reading'; this.render(); }
+
       editFromDashboard(id) {
-        const pin = prompt("Enter Admin PIN:");
+        const pin = prompt("Admin PIN:");
         if (pin === "abnpower") {
           const index = MOCK_EQUIPMENT.findIndex(e => e.id === id);
-          if (index !== -1) { 
-            this.state.isSingleEdit = true;
-            this.state.currentIndex = index; 
-            this.state.view = 'reading'; 
-            this.render(); 
-          }
-        } else if (pin !== null) {
-          alert("❌ Incorrect PIN.");
-        }
+          if (index !== -1) { this.state.isSingleEdit = true; this.state.currentIndex = index; this.state.view = 'reading'; this.render(); }
+        } else if (pin) alert("❌ Wrong PIN");
       }
     }
+
+    // --- GLOBAL HELPERS ---
+    let activeInput = null;
+    window.showNumPad = function(inputId) {
+      activeInput = document.getElementById(inputId);
+      document.getElementById('numPad').classList.remove('translate-y-full');
+    };
+    window.closeKeypad = function() {
+      document.getElementById('numPad').classList.add('translate-y-full');
+      activeInput = null;
+    };
+    window.addNum = function(num) {
+      if (!activeInput) return;
+      let val = activeInput.value;
+      if (num === '.' && val.includes('.')) return;
+      if (val.includes('.') && val.split('.')[1].length >= 3) return;
+      activeInput.value = val + num;
+    };
+    window.backspace = function() {
+      if (activeInput) activeInput.value = activeInput.value.slice(0, -1);
+    };
+    window.enterNext = function() {
+      const currInput = document.getElementById('c');
+      const prevInput = document.getElementById('p');
+      app.saveReading(currInput.value, prevInput.value);
+      window.closeKeypad();
+    };
+
     const app = new PowerCon();
   </script>
 </body>
