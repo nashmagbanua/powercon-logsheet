@@ -129,7 +129,7 @@
 
     class PowerCon {
       constructor() {
-        this.state = { view: 'home', currentIndex: 0, date: getLocalDate(new Date()), filterDate: getLocalDate(new Date()), sessionReadings: [], cloudReadings: {}, yesterdayReadings: {}, loading: false, isSingleEdit: false };
+        this.state = { view: 'home', currentIndex: 0, date: getLocalDate(new Date()), filterDate: getLocalDate(new Date()), sessionReadings: [], cloudReadings: {}, yesterdayReadings: {}, loading: false, isSingleEdit: false, isEditingFromReview: false};
         this.init();
       }
       async init() { loadSavedTheme(); this.render(); await this.syncWithCloud(); }
@@ -190,7 +190,9 @@
           </div>
           <div class="grid grid-cols-2 gap-3">
             <button onclick="app.exitReading()" class="py-4 font-bold uppercase text-[10px] opacity-50">Cancel</button>
-            <button onclick="window.enterNext()" class="bg-emerald-600 text-white font-black py-4 rounded-2xl shadow-lg uppercase italic text-sm">Submit & Next ➔</button>
+            <button onclick="window.enterNext()" class="bg-emerald-600 text-white font-black py-4 rounded-2xl shadow-lg uppercase italic text-sm">
+    ${this.state.isEditingFromReview || this.state.isSingleEdit ? 'UPDATE READING ✓' : 'Submit & Next ➔'}
+</button>
           </div>
         </div>`;
       }
@@ -229,23 +231,52 @@
       }
 
       async start() { await this.syncWithCloud(); this.state.isSingleEdit = false; let firstEmpty = 0; for(let i=0; i<MOCK_EQUIPMENT.length; i++) { if(!this.state.cloudReadings[MOCK_EQUIPMENT[i].id]) { firstEmpty = i; break; } } this.state.currentIndex = firstEmpty; this.state.view = 'reading'; this.render(); }
-      exitReading() { this.state.view = this.state.isSingleEdit ? 'records' : 'home'; this.state.isSingleEdit = false; this.render(); }
+      exitReading() { 
+    if (this.state.isEditingFromReview) {
+        this.state.isEditingFromReview = false;
+        this.state.view = 'review';
+    } else {
+        this.state.view = this.state.isSingleEdit ? 'records' : 'home'; 
+    }
+    this.state.isSingleEdit = false; 
+    this.render(); 
+}
       async saveReading(curr, prevInput) {
-        const eq = MOCK_EQUIPMENT[this.state.currentIndex];
-        const current = parseFloat(parseFloat(curr || 0).toFixed(3));
-        const prev = parseFloat(parseFloat(prevInput || 0).toFixed(3));
-        const usage = parseFloat((current - prev).toFixed(3));
-        if (current < prev && !confirm("⚠️ Current lower than previous. Save anyway?")) return;
-        const data = { id: eq.id, name: eq.name, loc: eq.loc, curr: current, prev: prev, usage: usage };
-        this.state.sessionReadings[this.state.currentIndex] = data;
-        if (this.state.isSingleEdit) {
-          await db.ref(`readings/${this.state.filterDate}/${eq.id}`).set(data);
-          this.state.isSingleEdit = false; this.state.view = 'records'; await this.syncWithCloud(this.state.filterDate);
-        } else {
-          if (this.state.currentIndex < MOCK_EQUIPMENT.length - 1) { this.state.currentIndex++; this.render(); } 
-          else { this.state.view = 'review'; this.render(); }
+    const eq = MOCK_EQUIPMENT[this.state.currentIndex];
+    const current = parseFloat(parseFloat(curr || 0).toFixed(3));
+    const prev = parseFloat(parseFloat(prevInput || 0).toFixed(3));
+    const usage = parseFloat((current - prev).toFixed(3));
+    
+    if (current < prev && !confirm("⚠️ Current lower than previous. Save anyway?")) return;
+    
+    const data = { id: eq.id, name: eq.name, loc: eq.loc, curr: current, prev: prev, usage: usage };
+    this.state.sessionReadings[this.state.currentIndex] = data;
+
+    // CHECK KUNG SAAN PUPUNTA PAGKAPINDOT NG NEXT/SUBMIT
+    if (this.state.isSingleEdit) {
+        // Galing sa Main Dashboard (Admin edit)
+        await db.ref(`readings/${this.state.filterDate}/${eq.id}`).set(data);
+        this.state.isSingleEdit = false; 
+        this.state.view = 'records'; 
+        await this.syncWithCloud(this.state.filterDate);
+    } 
+    else if (this.state.isEditingFromReview) {
+        // FIX: Pag galing sa Review, balik lang sa Review list
+        this.state.isEditingFromReview = false; // Reset flag
+        this.state.view = 'review'; 
+        this.render();
+    } 
+    else {
+        // Normal sequence (Next, Next, Next...)
+        if (this.state.currentIndex < MOCK_EQUIPMENT.length - 1) { 
+            this.state.currentIndex++; 
+            this.render(); 
+        } else { 
+            this.state.view = 'review'; 
+            this.render(); 
         }
-      }
+    }
+}
 
       reviewHTML() {
         return `<div class="p-6 max-w-xl mx-auto flex flex-col min-h-screen">
@@ -273,7 +304,7 @@
         this.state.view = 'records'; this.state.filterDate = this.state.date; await this.syncWithCloud(this.state.date);
       }
 
-      editFromReview(i) { this.state.currentIndex = i; this.state.view = 'reading'; this.render(); }
+      editFromReview(i) { this.state.currentIndex = i; this.state.isEditingFromReview = true; this.state.view = 'reading'; this.render(); }
       editFromDashboard(id) { const pin = prompt("Admin PIN:"); if (pin === "abnpower") { const index = MOCK_EQUIPMENT.findIndex(e => e.id === id); if (index !== -1) { this.state.isSingleEdit = true; this.state.currentIndex = index; this.state.view = 'reading'; this.render(); } } }
       exportToExcel() {
         let csv = "ID,Equipment,Location,Previous,Current,Usage\n";
