@@ -205,12 +205,26 @@
   });
   const meta = this.state.cloudReadings['metadata'] || {};
 
-  // Map category to a color; user can customize later
-  const categoryColors = {
+  // Default category colors
+  const defaultColors = {
     "UTILITIES": "#ef4444",   // red
     "PROCESS": "#3b82f6",     // blue
     "BOTTLING": "#f59e0b",    // amber
     "LVSG 5 LOADS": "#10b981" // emerald
+  };
+
+  // User-customized colors (if any)
+  const colors = this.state.userColors || defaultColors;
+
+  // Text color for contrast
+  const getContrast = (hex) => {
+    if(!hex) return "#fff";
+    hex = hex.replace('#','');
+    const r = parseInt(hex.substr(0,2),16);
+    const g = parseInt(hex.substr(2,2),16);
+    const b = parseInt(hex.substr(4,2),16);
+    const yiq = ((r*299)+(g*587)+(b*114))/1000;
+    return yiq >= 128 ? "#000000" : "#ffffff";
   };
 
   return `<div class="p-4 max-w-xl mx-auto min-h-screen pb-40">
@@ -231,16 +245,19 @@
 
     <div class="space-y-4">
       ${["UTILITIES", "PROCESS", "BOTTLING", "LVSG 5 LOADS"].map(cat => {
-        const color = categoryColors[cat] || "#fcd34d"; // fallback amber
-        const textColor = this.state.bodyMode === 'light' ? "#000000" : "#ffffff"; // dynamic text for contrast
+        const catColor = colors[cat] || defaultColors[cat];
+        const catText = getContrast(catColor);
+
         return `<div>
-          <div class="px-2 mb-2 text-[10px] font-black uppercase tracking-[0.2em] rounded px-2 py-1 inline-block" style="background-color:${color}33; color:${textColor};">
+          <div class="px-2 mb-2 text-[10px] font-black uppercase tracking-[0.2em] rounded px-2 py-1 inline-block" style="background-color:${catColor}33; color:${catText};">
             ${cat}
           </div>
           <div class="space-y-2">
             ${MOCK_EQUIPMENT.filter(e => e.loc === cat).map(e => {
               const r = this.state.cloudReadings[e.id] || { prev: 0, curr: 0, usage: 0 };
-              const currBg = `${color}33`; // semi-transparent current background
+              const currText = getContrast(catColor);
+              const currBg = `${catColor}33`; // semi-transparent for current value
+
               return `<div class="glass-card p-4 rounded-2xl flex items-center justify-between" onclick="app.editFromDashboard('${e.id}')">
                 <div class="flex-1">
                   <p class="text-[10px] font-white uppercase mb-1">${e.name}</p>
@@ -250,8 +267,8 @@
                       <span class="opacity-70">${fmt(r.prev)}</span>
                     </div>
                     <div>
-                      <span class="font-semibold" style="color:${color}">Current:</span>
-                      <span class="px-1.5 py-0.5 rounded font-bold text-[14px]" style="background-color:${currBg}; color:${textColor}">
+                      <span class="font-semibold" style="color:${catColor}">Current:</span>
+                      <span class="px-1.5 py-0.5 rounded font-bold text-[14px]" style="background-color:${currBg}; color:${currText}">
                         ${r.curr.toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 3 })}
                       </span>
                     </div>
