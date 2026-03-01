@@ -198,29 +198,20 @@
       }
 
       recordsHTML() {
-  let grandTotal = 0; 
-  MOCK_EQUIPMENT.forEach(eq => { 
-    const r = this.state.cloudReadings[eq.id]; 
-    if (r && r.usage) grandTotal += parseFloat(r.usage); 
+  let grandTotal = 0;
+  MOCK_EQUIPMENT.forEach(eq => {
+    const r = this.state.cloudReadings[eq.id];
+    if (r && r.usage) grandTotal += parseFloat(r.usage);
   });
   const meta = this.state.cloudReadings['metadata'] || {};
 
-  // Example: user-selected category colors (from UI settings)
+  // Map category to a color; user can customize later
   const categoryColors = {
-    "UTILITIES": "#EF4444", // red
-    "PROCESS": "#3B82F6",   // blue
-    "BOTTLING": "#F59E0B",  // amber
-    "LVSG 5 LOADS": "#10B981" // emerald
+    "UTILITIES": "#ef4444",   // red
+    "PROCESS": "#3b82f6",     // blue
+    "BOTTLING": "#f59e0b",    // amber
+    "LVSG 5 LOADS": "#10b981" // emerald
   };
-
-  const textColorForBg = (bg) => {
-    // basic luminance check for readability
-    const c = bg.replace('#','');
-    const r = parseInt(c.substr(0,2),16);
-    const g = parseInt(c.substr(2,2),16);
-    const b = parseInt(c.substr(4,2),16);
-    return (r*0.299 + g*0.587 + b*0.114) > 186 ? '#000000' : '#ffffff';
-  }
 
   return `<div class="p-4 max-w-xl mx-auto min-h-screen pb-40">
     <div class="flex justify-between items-center mb-6 pt-4">
@@ -240,30 +231,29 @@
 
     <div class="space-y-4">
       ${["UTILITIES", "PROCESS", "BOTTLING", "LVSG 5 LOADS"].map(cat => {
-        const bg = categoryColors[cat] || '#FBBF24';
-        const fg = textColorForBg(bg);
-        return `
-        <div>
-          <div class="px-2 mb-2 text-[10px] font-black uppercase tracking-[0.2em] rounded px-2 py-1 inline-block" style="background-color:${bg}33; color:${fg};">
+        const color = categoryColors[cat] || "#fcd34d"; // fallback amber
+        const textColor = this.state.bodyMode === 'light' ? "#000000" : "#ffffff"; // dynamic text for contrast
+        return `<div>
+          <div class="px-2 mb-2 text-[10px] font-black uppercase tracking-[0.2em] rounded px-2 py-1 inline-block" style="background-color:${color}33; color:${textColor};">
             ${cat}
           </div>
           <div class="space-y-2">
             ${MOCK_EQUIPMENT.filter(e => e.loc === cat).map(e => {
               const r = this.state.cloudReadings[e.id] || { prev: 0, curr: 0, usage: 0 };
-              return `
-              <div class="glass-card p-4 rounded-2xl flex items-center justify-between" onclick="app.editFromDashboard('${e.id}')">
+              const currBg = `${color}33`; // semi-transparent current background
+              return `<div class="glass-card p-4 rounded-2xl flex items-center justify-between" onclick="app.editFromDashboard('${e.id}')">
                 <div class="flex-1">
                   <p class="text-[10px] font-white uppercase mb-1">${e.name}</p>
-                  <div class="text-[9px] font-mono-numbers space-y-0.5">
+                  <div class="text-[9px] font-mono-numbers text-white space-y-0.5">
                     <div>
                       <span class="opacity-50">Previous:</span>
                       <span class="opacity-70">${fmt(r.prev)}</span>
                     </div>
                     <div>
-                      <span class="font-semibold" style="color:${bg}">Current:</span>
-                      <input type="text" value="${fmt(r.curr)}" class="px-1.5 py-0.5 rounded font-bold text-[14px] w-16 text-center"
-                             style="background-color:${bg}33; color:${fg}; border:none; outline:none;"
-                             onchange="app.saveReading(this.value, ${r.prev})">
+                      <span class="font-semibold" style="color:${color}">Current:</span>
+                      <span class="px-1.5 py-0.5 rounded font-bold text-[14px]" style="background-color:${currBg}; color:${textColor}">
+                        ${r.curr.toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 3 })}
+                      </span>
                     </div>
                   </div>
                 </div>
