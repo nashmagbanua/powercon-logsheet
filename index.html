@@ -197,7 +197,7 @@
         </div>`;
       }
 
-      recordsHTML() {
+     recordsHTML() {
   let grandTotal = 0;
   MOCK_EQUIPMENT.forEach(eq => {
     const r = this.state.cloudReadings[eq.id];
@@ -207,16 +207,14 @@
 
   // Default category colors
   const defaultColors = {
-    "UTILITIES": "#ef4444",   // red
-    "PROCESS": "#3b82f6",     // blue
-    "BOTTLING": "#f59e0b",    // amber
-    "LVSG 5 LOADS": "#10b981" // emerald
+    "UTILITIES": "#ef4444",
+    "PROCESS": "#3b82f6",
+    "BOTTLING": "#f59e0b",
+    "LVSG 5 LOADS": "#10b981"
   };
 
-  // User-customized colors (if any)
   const colors = this.state.userColors || defaultColors;
 
-  // Text color for contrast
   const getContrast = (hex) => {
     if(!hex) return "#fff";
     hex = hex.replace('#','');
@@ -255,22 +253,25 @@
           <div class="space-y-2">
             ${MOCK_EQUIPMENT.filter(e => e.loc === cat).map(e => {
               const r = this.state.cloudReadings[e.id] || { prev: 0, curr: 0, usage: 0 };
-              const currText = getContrast(catColor);
-              const currBg = `${catColor}33`; // semi-transparent for current value
+              const textPrev = getContrast(catColor);
+              const bgPrev = `${catColor}1A`; // very light for previous
+              const textCurr = getContrast(catColor);
+              const bgCurr = `${catColor}33`; // semi-transparent for current
 
-              return `<div class="glass-card p-4 rounded-2xl flex items-center justify-between" onclick="app.editFromDashboard('${e.id}')">
+              return `<div class="glass-card p-4 rounded-2xl flex items-center justify-between">
                 <div class="flex-1">
                   <p class="text-[10px] font-white uppercase mb-1">${e.name}</p>
-                  <div class="text-[9px] font-mono-numbers text-white space-y-0.5">
+                  <div class="text-[9px] font-mono-numbers space-y-0.5">
                     <div>
                       <span class="opacity-50">Previous:</span>
-                      <span class="opacity-70">${fmt(r.prev)}</span>
+                      <span class="px-1.5 py-0.5 rounded" style="background-color:${bgPrev}; color:${textPrev}">${r.prev}</span>
                     </div>
                     <div>
                       <span class="font-semibold" style="color:${catColor}">Current:</span>
-                      <span class="px-1.5 py-0.5 rounded font-bold text-[14px]" style="background-color:${currBg}; color:${currText}">
-                        ${r.curr.toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 3 })}
-                      </span>
+                      <input type="text" value="${r.curr}" 
+                        class="px-1.5 py-0.5 rounded font-bold text-[14px] w-24 text-center" 
+                        style="background-color:${bgCurr}; color:${textCurr};" 
+                        onchange="app.saveReading(this.value, '${r.prev}')">
                     </div>
                   </div>
                 </div>
