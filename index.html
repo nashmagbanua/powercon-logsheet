@@ -198,37 +198,69 @@
       }
 
       recordsHTML() {
-        let grandTotal = 0; 
-        MOCK_EQUIPMENT.forEach(eq => { const r = this.state.cloudReadings[eq.id]; if (r && r.usage) grandTotal += parseFloat(r.usage); });
-        const meta = this.state.cloudReadings['metadata'] || {};
-        return `<div class="p-4 max-w-xl mx-auto min-h-screen pb-40">
-          <div class="flex justify-between items-center mb-6 pt-4"><button onclick="app.state.view='home';app.render()" class="font-black text-[10px] tracking-widest px-4 py-2 bg-white/10 rounded-xl border border-white/20">← BACK</button><input type="date" value="${this.state.filterDate}" onchange="app.state.filterDate=this.value; app.syncWithCloud(this.value)" class="bg-white/10 px-4 py-2 rounded-xl font-bold text-xs border border-white/20 text-emerald-500 outline-none"></div>
-          <div class="glass-card p-8 rounded-[2rem] shadow-2xl mb-8 border-b-8 border-emerald-500 text-center">
-            <h3 class="text-[9px] font-black uppercase tracking-widest mb-2 opacity-60">Daily Consumption</h3>
-            <div class="text-4xl font-black font-mono-numbers mb-2">${fmt(grandTotal)} <span class="text-[10px] font-sans">kWh</span></div>
-            <div class="flex justify-center items-center gap-2 mt-2">
-                <div class="h-[1px] w-4 bg-emerald-500/30"></div>
-                <p class="text-[9px] font-black uppercase text-emerald-500">OPERATOR: ${meta.operator || 'UNSPECIFIED'}</p>
-                <div class="h-[1px] w-4 bg-emerald-500/30"></div>
-            </div>
+  let grandTotal = 0; 
+  MOCK_EQUIPMENT.forEach(eq => { 
+    const r = this.state.cloudReadings[eq.id]; 
+    if (r && r.usage) grandTotal += parseFloat(r.usage); 
+  });
+  const meta = this.state.cloudReadings['metadata'] || {};
+
+  return `<div class="p-4 max-w-xl mx-auto min-h-screen pb-40">
+    <div class="flex justify-between items-center mb-6 pt-4">
+      <button onclick="app.state.view='home';app.render()" class="font-black text-[10px] tracking-widest px-4 py-2 bg-white/10 rounded-xl border border-white/20">← BACK</button>
+      <input type="date" value="${this.state.filterDate}" onchange="app.state.filterDate=this.value; app.syncWithCloud(this.value)" class="bg-white/10 px-4 py-2 rounded-xl font-bold text-xs border border-white/20 text-emerald-500 outline-none">
+    </div>
+
+    <div class="glass-card p-8 rounded-[2rem] shadow-2xl mb-8 border-b-8 border-emerald-500 text-center">
+      <h3 class="text-[9px] font-black uppercase tracking-widest mb-2 opacity-60">Daily Consumption</h3>
+      <div class="text-4xl font-black font-mono-numbers mb-2">${fmt(grandTotal)} <span class="text-[10px] font-sans">kWh</span></div>
+      <div class="flex justify-center items-center gap-2 mt-2">
+        <div class="h-[1px] w-4 bg-emerald-500/30"></div>
+        <p class="text-[9px] font-black uppercase text-emerald-500">OPERATOR: ${meta.operator || 'UNSPECIFIED'}</p>
+        <div class="h-[1px] w-4 bg-emerald-500/30"></div>
+      </div>
+    </div>
+
+    <div class="space-y-4">
+      ${["UTILITIES", "PROCESS", "BOTTLING", "LVSG 5 LOADS"].map(cat => `
+        <div>
+          <div class="px-2 mb-2 text-[10px] font-black uppercase tracking-[0.2em] text-white bg-yellow-400/20 rounded px-2 py-1 inline-block">
+            ${cat}
           </div>
-          <div class="space-y-4">
-            ${["UTILITIES", "PROCESS", "BOTTLING", "LVSG 5 LOADS"].map(cat => `
-              <div><div class="px-2 mb-2 text-[10px] font-black uppercase tracking-[0.2em] opacity-30">${cat}</div>
-                <div class="space-y-2">${MOCK_EQUIPMENT.filter(e => e.loc === cat).map(e => {
-                    const r = this.state.cloudReadings[e.id] || { prev: 0, curr: 0, usage: 0 };
-                    return `<div class="glass-card p-4 rounded-2xl flex items-center justify-between" onclick="app.editFromDashboard('${e.id}')">
-                        <div class="flex-1"><p class="text-[10px] font-white uppercase mb-1">${e.name}</p><p class="text-[9px] font-mono-numbers opacity-40">Previous: ${fmt(r.prev)}  |  Current: ${fmt(r.curr)}</p></div>
-                        <div class="text-right"><p class="text-[12px] font-mono-numbers font-white text-emerald-600">${fmt(r.usage)}</p></div>
-                    </div>`;
-                }).join('')}</div></div>`).join('')}
+          <div class="space-y-2">
+            ${MOCK_EQUIPMENT.filter(e => e.loc === cat).map(e => {
+              const r = this.state.cloudReadings[e.id] || { prev: 0, curr: 0, usage: 0 };
+              return `<div class="glass-card p-4 rounded-2xl flex items-center justify-between" onclick="app.editFromDashboard('${e.id}')">
+                <div class="flex-1">
+                  <p class="text-[10px] font-white uppercase mb-1">${e.name}</p>
+                  <div class="text-[9px] font-mono-numbers text-white space-y-0.5">
+                    <div>
+                      <span class="opacity-50">Previous:</span>
+                      <span class="opacity-70">${fmt(r.prev)}</span>
+                    </div>
+                    <div>
+                      <span class="text-yellow-400 font-semibold">Current:</span>
+                      <span class="bg-yellow-400/30 text-yellow-300 px-1.5 py-0.5 rounded font-bold">
+                        ${fmt(r.curr)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <p class="text-[12px] font-mono-numbers font-white text-emerald-600">${fmt(r.usage)}</p>
+                </div>
+              </div>`;
+            }).join('')}
           </div>
-          <div class="fixed bottom-0 left-0 w-full p-4 bg-transparent backdrop-blur-md flex gap-3">
-             <button onclick="app.exportToExcel()" class="flex-1 bg-slate-900 text-white py-4 rounded-xl font-black text-[10px] uppercase">Download Excel</button>
-             <button onclick="window.open('logsheet.html?date=' + app.state.filterDate, '_blank')" class="flex-1 bg-emerald-600 text-white py-4 rounded-xl font-black text-[10px] uppercase">Print Log</button>
-          </div>
-        </div>`;
-      }
+        </div>`).join('')}
+    </div>
+
+    <div class="fixed bottom-0 left-0 w-full p-4 bg-transparent backdrop-blur-md flex gap-3">
+      <button onclick="app.exportToExcel()" class="flex-1 bg-slate-900 text-white py-4 rounded-xl font-black text-[10px] uppercase">Download Excel</button>
+      <button onclick="window.open('logsheet.html?date=' + app.state.filterDate, '_blank')" class="flex-1 bg-emerald-600 text-white py-4 rounded-xl font-black text-[10px] uppercase">Print Log</button>
+    </div>
+  </div>`; 
+}
 
       async start() { await this.syncWithCloud(); this.state.isSingleEdit = false; let firstEmpty = 0; for(let i=0; i<MOCK_EQUIPMENT.length; i++) { if(!this.state.cloudReadings[MOCK_EQUIPMENT[i].id]) { firstEmpty = i; break; } } this.state.currentIndex = firstEmpty; this.state.view = 'reading'; this.render(); }
       exitReading() { 
