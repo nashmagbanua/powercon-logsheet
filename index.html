@@ -198,25 +198,31 @@
       }
 
       recordsHTML() {
-  let grandTotal = 0;
-  MOCK_EQUIPMENT.forEach(eq => {
-    const r = this.state.cloudReadings[eq.id];
-    if (r && r.usage) grandTotal += parseFloat(r.usage);
+  let grandTotal = 0; 
+  MOCK_EQUIPMENT.forEach(eq => { 
+    const r = this.state.cloudReadings[eq.id]; 
+    if (r && r.usage) grandTotal += parseFloat(r.usage); 
   });
   const meta = this.state.cloudReadings['metadata'] || {};
 
-  const getContrastColor = (hex) => {
-    const c = hex.replace('#','');
-    const rgb = parseInt(c,16);
-    const r = (rgb >> 16) & 0xff;
-    const g = (rgb >> 8) & 0xff;
-    const b = rgb & 0xff;
-    const brightness = (r*299 + g*587 + b*114)/1000;
-    return brightness > 155 ? 'black' : 'white';
+  // Example: user-selected category colors (from UI settings)
+  const categoryColors = {
+    "UTILITIES": "#EF4444", // red
+    "PROCESS": "#3B82F6",   // blue
+    "BOTTLING": "#F59E0B",  // amber
+    "LVSG 5 LOADS": "#10B981" // emerald
   };
 
+  const textColorForBg = (bg) => {
+    // basic luminance check for readability
+    const c = bg.replace('#','');
+    const r = parseInt(c.substr(0,2),16);
+    const g = parseInt(c.substr(2,2),16);
+    const b = parseInt(c.substr(4,2),16);
+    return (r*0.299 + g*0.587 + b*0.114) > 186 ? '#000000' : '#ffffff';
+  }
+
   return `<div class="p-4 max-w-xl mx-auto min-h-screen pb-40">
-    <!-- Header & total consumption -->
     <div class="flex justify-between items-center mb-6 pt-4">
       <button onclick="app.state.view='home';app.render()" class="font-black text-[10px] tracking-widest px-4 py-2 bg-white/10 rounded-xl border border-white/20">← BACK</button>
       <input type="date" value="${this.state.filterDate}" onchange="app.state.filterDate=this.value; app.syncWithCloud(this.value)" class="bg-white/10 px-4 py-2 rounded-xl font-bold text-xs border border-white/20 text-emerald-500 outline-none">
@@ -234,45 +240,40 @@
 
     <div class="space-y-4">
       ${["UTILITIES", "PROCESS", "BOTTLING", "LVSG 5 LOADS"].map(cat => {
-        const userColor = getUserCategoryColor(cat) || '#facc15'; // halimbawa default yellow
-        const textColor = getContrastColor(userColor);
-
+        const bg = categoryColors[cat] || '#FBBF24';
+        const fg = textColorForBg(bg);
         return `
         <div>
-          <div class="px-2 mb-2 rounded px-2 py-1 inline-block text-[10px] font-black uppercase tracking-[0.2em]"
-               style="background-color:${userColor}; color:${textColor};">
+          <div class="px-2 mb-2 text-[10px] font-black uppercase tracking-[0.2em] rounded px-2 py-1 inline-block" style="background-color:${bg}33; color:${fg};">
             ${cat}
           </div>
           <div class="space-y-2">
             ${MOCK_EQUIPMENT.filter(e => e.loc === cat).map(e => {
-              const r = this.state.cloudReadings[e.id] || { prev:0, curr:0, usage:0 };
-              const currColor = getContrastColor(userColor); // current number readable din
+              const r = this.state.cloudReadings[e.id] || { prev: 0, curr: 0, usage: 0 };
               return `
-                <div class="glass-card p-4 rounded-2xl flex items-center justify-between" onclick="app.editFromDashboard('${e.id}')">
-                  <div class="flex-1">
-                    <p class="text-[10px] font-white uppercase mb-1">${e.name}</p>
-                    <div class="text-[9px] font-mono-numbers text-white space-y-0.5">
-                      <div>
-                        <span class="opacity-50">Previous:</span>
-                        <span class="opacity-70">${fmt(r.prev)}</span>
-                      </div>
-                      <div>
-                        <span class="text-yellow-400 font-semibold">Current:</span>
-                        <span class="px-1.5 py-0.5 rounded font-bold text-[14px]" style="background-color:${userColor}66; color:${currColor}">
-                          ${fmt(r.curr)}
-                        </span>
-                      </div>
+              <div class="glass-card p-4 rounded-2xl flex items-center justify-between" onclick="app.editFromDashboard('${e.id}')">
+                <div class="flex-1">
+                  <p class="text-[10px] font-white uppercase mb-1">${e.name}</p>
+                  <div class="text-[9px] font-mono-numbers space-y-0.5">
+                    <div>
+                      <span class="opacity-50">Previous:</span>
+                      <span class="opacity-70">${fmt(r.prev)}</span>
+                    </div>
+                    <div>
+                      <span class="font-semibold" style="color:${bg}">Current:</span>
+                      <input type="text" value="${fmt(r.curr)}" class="px-1.5 py-0.5 rounded font-bold text-[14px] w-16 text-center"
+                             style="background-color:${bg}33; color:${fg}; border:none; outline:none;"
+                             onchange="app.saveReading(this.value, ${r.prev})">
                     </div>
                   </div>
-                  <div class="text-right">
-                    <p class="text-[16px] font-mono-numbers font-white text-emerald-600">${fmt(r.usage)}</p>
-                  </div>
                 </div>
-              `;
+                <div class="text-right">
+                  <p class="text-[16px] font-mono-numbers font-white text-emerald-600">${fmt(r.usage)}</p>
+                </div>
+              </div>`;
             }).join('')}
           </div>
-        </div>
-        `;
+        </div>`;
       }).join('')}
     </div>
 
@@ -282,7 +283,6 @@
     </div>
   </div>`;
 }
-
       async start() { await this.syncWithCloud(); this.state.isSingleEdit = false; let firstEmpty = 0; for(let i=0; i<MOCK_EQUIPMENT.length; i++) { if(!this.state.cloudReadings[MOCK_EQUIPMENT[i].id]) { firstEmpty = i; break; } } this.state.currentIndex = firstEmpty; this.state.view = 'reading'; this.render(); }
       exitReading() { 
     if (this.state.isEditingFromReview) {
