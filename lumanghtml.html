@@ -1,195 +1,453 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="en" class="h-full">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Power Consumption Logsheet</title>
-  <link rel="stylesheet" href="style.css" />
-  <meta name="theme-color" content="#ffffff" />
-  <link rel="icon" type="image/png" href="abnlogo.png" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ABN PowerCon</title>
+   <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16x16.png">
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&family=JetBrains+Mono:wght@700&display=swap');
+    body { font-family: 'Plus+Jakarta+Sans', sans-serif; background-image: url('assets/bg.jpg'); background-size: cover; background-position: center; background-attachment: fixed; transition: all 0.4s ease; margin: 0; }
+    .font-mono-numbers { font-family: 'JetBrains Mono', monospace; }
+    
+    .glass-card { transition: all 0.3s ease; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+    
+    /* Light Mode */
+    .light-mode { color: #0f172a; }
+    .light-mode .glass-card { background: rgba(255, 255, 255, var(--glass-opacity, 0.8)); border: 1px solid rgba(255, 255, 255, 0.3); }
+    .light-mode .modal-content { background: #ffffff; color: #0f172a; border: 1px solid #e2e8f0; }
+
+    /* Dark Mode */
+    .dark-mode { color: #ffffff; }
+    .dark-mode .glass-card { background: rgba(0, 0, 0, var(--glass-opacity, 0.5)) !important; border: 1px solid rgba(255, 255, 255, 0.1); }
+    .dark-mode .modal-content { background: #0f172a; color: #ffffff; border: 1px solid #1e293b; }
+    .dark-mode .text-emerald-600 { color: #34d399 !important; text-shadow: 0 0 10px rgba(52, 211, 153, 0.3); }
+    .dark-mode input { color: white; }
+
+    .num-btn { height: 55px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; font-weight: 800; border-radius: 1rem; transition: all 0.1s; cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+    .light-mode .num-btn { background: rgba(0,0,0,0.05); color: #0f172a; }
+    .dark-mode .num-btn { background: rgba(255,255,255,0.1); color: #ffffff; }
+    .num-btn:active, .num-btn.active-key { background: #10b981 !important; color: white !important; transform: scale(0.95); }
+    
+    .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 1.5rem; }
+    .hidden { display: none !important; }
+    .theme-preview { height: 35px; width: 100%; border-radius: 8px; border: 2px solid rgba(255,255,255,0.1); }
+  </style>
 </head>
-<body>
-  <header class="app-header">
-    <img src="abnlogo.png" alt="ABN Logo" class="logo" />
-    <h1>Power Consumption Logsheet</h1>
-  </header>
+<body id="bodyBg" class="h-full light-mode">
 
-  <div class="container">
-    <div id="login-form">
-      <h2>Please Login</h2>
-      <label>Passcode: <input type="text" id="passcode-input" placeholder="Enter passcode" /></label>
-      <button id="login-btn">Login</button>
-    </div>
+  <div id="app" class="h-full w-full"></div>
 
-    <div id="operator-form" style="display: none;">
-      <h2>Operator Name</h2>
-      <label>Operator's Full Name: <input type="text" id="operator-name-input" placeholder="Enter full name" /></label>
-      <button id="start-btn">Start Session</button>
-    </div>
-
-    <div id="app-content" style="display: none;">
-      <div class="header-form">
-        <label>Date: <input type="date" id="date-input" /></label>
-        <label>Operator: <span id="operator-name"></span></label>
+  <div id="settingsModal" class="modal hidden">
+    <div class="modal-content rounded-[2.5rem] p-8 w-full max-w-xs shadow-2xl">
+      <div class="text-center mb-6">
+          <h2 class="text-lg font-black uppercase italic text-emerald-500">UI Settings</h2>
+          <p class="text-[8px] font-bold opacity-50 uppercase tracking-widest">Personalize Workspace</p>
       </div>
-
-     <div class="button-group">
-        <button id="save-btn">Save</button>
-        <button id="reload-btn">Reload Previous Reading</button>
-        <button id="logout-btn">Logout</button>
+      <div class="space-y-6">
+        <div>
+           <label class="text-[9px] font-black uppercase mb-2 block opacity-60 text-center">Glass Opacity</label>
+           <input type="range" min="0.1" max="0.95" step="0.05" value="0.80" class="w-full h-1 bg-emerald-500/20 rounded-lg accent-emerald-500" oninput="updateOpacity(this.value)">
+        </div>
+        <div>
+            <label class="text-[9px] font-black uppercase mb-3 block opacity-60 text-center">Color Themes</label>
+            <div class="grid grid-cols-4 gap-y-4 gap-x-2">
+                <div onclick="setBg('#f8fafc', 'light')" class="flex flex-col items-center gap-1 cursor-pointer">
+                    <div class="theme-preview bg-slate-100 border"></div>
+                    <span class="text-[7px] font-bold uppercase opacity-60">Snow</span>
+                </div>
+                <div onclick="setBg('#eff6ff', 'light')" class="flex flex-col items-center gap-1 cursor-pointer">
+                    <div class="theme-preview bg-blue-100 border"></div>
+                    <span class="text-[7px] font-bold uppercase opacity-60">Sky</span>
+                </div>
+                <div onclick="setBg('#fff1f2', 'light')" class="flex flex-col items-center gap-1 cursor-pointer">
+                    <div class="theme-preview bg-rose-100 border"></div>
+                    <span class="text-[7px] font-bold uppercase opacity-60">Rose</span>
+                </div>
+                <div onclick="setBg('#fefce8', 'light')" class="flex flex-col items-center gap-1 cursor-pointer">
+                    <div class="theme-preview bg-yellow-50 border border-yellow-200"></div>
+                    <span class="text-[7px] font-bold uppercase opacity-60">Cream</span>
+                </div>
+                <div onclick="setBg('#0f172a', 'dark')" class="flex flex-col items-center gap-1 cursor-pointer">
+                    <div class="theme-preview bg-slate-900"></div>
+                    <span class="text-[7px] font-bold uppercase opacity-60">Night</span>
+                </div>
+                <div onclick="setBg('#064e3b', 'dark')" class="flex flex-col items-center gap-1 cursor-pointer">
+                    <div class="theme-preview bg-emerald-950"></div>
+                    <span class="text-[7px] font-bold uppercase opacity-60">Forest</span>
+                </div>
+                <div onclick="setBg('#450a0a', 'dark')" class="flex flex-col items-center gap-1 cursor-pointer">
+                    <div class="theme-preview bg-red-950"></div>
+                    <span class="text-[7px] font-bold uppercase opacity-60">Ruby</span>
+                </div>
+                <div onclick="setBg('#1c1917', 'dark')" class="flex flex-col items-center gap-1 cursor-pointer">
+                    <div class="theme-preview bg-stone-900"></div>
+                    <span class="text-[7px] font-bold uppercase opacity-60">Earth</span>
+                </div>
+            </div>
+        </div>
+        <button onclick="document.getElementById('bgUpload').click()" class="w-full py-4 bg-emerald-500/10 rounded-2xl text-[10px] font-black uppercase border border-emerald-500/20">Custom Image</button>
+        <input type="file" id="bgUpload" accept="image/*" class="hidden" onchange="handleImageUpload(event)">
       </div>
-      <div class="section" id="utilities-section">
-  <h2>Utilities</h2>
-  <table>
-    <thead>
-      <tr><th>Equipment</th><th>Start</th><th>End</th><th>Total (kWh)</th></tr>
-    </thead>
-    <tbody>
-      <tr><td>Refrigeration System</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
-      <tr><td>Clean Steam Generator</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
-      <tr><td>Bulk Chemical System</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
-      <tr><td>Condensate Return System</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
-      <tr><td>RVAC</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
-      <tr><td>BOILER</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
-      <tr><td>Compressed Dry Air (CDA)</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
-      <tr><td>Waste Water Treatment Plant (WWTP)</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
-      <tr><td>Water Treatment Plant (WTP)</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
-      <tr><td>Combined Water Storage (CWS)</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
-      <tr><td>Sump Pit Pump 1</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
-      <tr><td>Freezer & Cold Storage</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
-    </tbody>
-    <tfoot>
-  <tr>
-    <td colspan="3"><strong>Subtotal (Utilities)</strong></td>
-    <td><span class="subtotal">0</span></td>
-  </tr>
-</tfoot>
-
-  </table>
-</div>
-
-<div class="section" id="process-section">
-  <h2>Process</h2>
-  <table>
-    <thead>
-      <tr><th>Equipment</th><th>Start</th><th>End</th><th>Total (kWh)</th></tr>
-    </thead>
-    <tbody>
-      <tr><td>CIP Line (E7)</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
-      <tr><td>Bottle Washer (E8)</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
-      <tr><td>Modular Labeller (E9)</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
-      <tr><td>Container Conveyor (E10)</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
-      <tr><td>Conveyor Lubrication (E11)</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
-      <tr><td>Alwin Soy</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
-      <tr><td>Process MCC</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
-      <tr><td>Homogenizer</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
-      <tr><td>Soya Bean Pre-treatment &Handling</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
-      <tr><td>Sugar Dissolving</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
-    </tbody>
-    <tfoot>
-  <tr>
-    <td colspan="3"><strong>Subtotal (Process)</strong></td>
-    <td><span class="subtotal">0</span></td>
-  </tr>
-</tfoot>
-  </table>
-</div>
-
-<div class="section" id="bottling-section">
-  <h2>Bottling</h2>
-  <table>
-    <thead>
-      <tr><th>Equipment</th><th>Start</th><th>End</th><th>Total (kWh)</th></tr>
-    </thead>
-    <tbody>
-      <tr><td>Container Dryer (E1)</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
-      <tr><td>Packer (E2)</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
-      <tr><td>Unpacker (E3)</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
-      <tr><td>Container Depalettiser (E4)</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
-      <tr><td>Pack Washing (E5)</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
-      <tr><td>Inspector (E6)</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
-      <tr><td>Pack Conveyor (E12)</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
-      <tr><td>Ups</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
-      <tr><td>Wrap Round</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
-      <tr><td>Hydro Sterilizer</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
-      <tr><td>Filler</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
-    </tbody>
-    <tfoot>
-  <tr>
-    <td colspan="3"><strong>Subtotal (Bottling)</strong></td>
-    <td><span class="subtotal">0</span></td>
-  </tr>
-</tfoot>
-</table>
-</div>
-
-<div class="section" id="lvsg5-section">
-  <h2>LVSG 5 LOADS</h2>
-  <table>
-    <thead>
-      <tr><th>Equipment</th><th>Start</th><th>End</th><th>Total (kWh)</th></tr>
-    </thead>
-    <tbody>
-      <tr><td>DPP</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
-      <tr><td>DLP</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
-      <tr><td>WareHouse</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
-      <tr><td>RVAC (220V)</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
-      <tr><td>WWTP (220V)</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
-      <tr><td>DP-WM</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
-      <tr><td>Sump pit Pump2</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>
-      <tr><td>Accumulation Table</td><td><input class="start" /></td><td><input class="end" /></td><td><span class="total">0</span></td></tr>  
-    </tbody>
-    <tfoot>
-  <tr>
-    <td colspan="3"><strong>Subtotal (LVSG 5 LOADS)</strong></td>
-    <td><span class="subtotal">0</span></td>
-  </tr>
-</tfoot>
-</table>
-</div>
-      <div id="grandtotal-container" style="margin-top:20px; font-weight:bold;">
-  Grand Total (All Sections): <span id="grandtotal">0</span>
-</div>
-
-      <div id="disclaimerModal" style="position:fixed; top:0; left:0; width:100%; height:100%; background-color:rgba(0,0,0,0.6); display:none; align-items:center; justify-content:center; z-index:1000;">
-    <div style="background:#fff; padding:30px; max-width:500px; border-radius:10px; font-family:'Inter', sans-serif; box-shadow:0 0 15px rgba(0,0,0,0.3); text-align:center;">
-      <h2 style="margin-top:0;">🔒 Internal Use Only</h2>
-      <p style="font-size:15px; line-height:1.6;">
-        This tool is strictly intended for use by the <strong>ABN Engineering Department - Utilities</strong> only.<br>
-        Unauthorized access, sharing, or usage is not permitted and may be subject to disciplinary action.
-      </p>
-      <button onclick="closeDisclaimer()" style="margin-top:20px; padding:10px 20px; background-color:#28a745; color:white; border:none; border-radius:5px; font-size:14px; cursor:pointer;">I Understand</button>
+      <button onclick="toggleSettings()" class="mt-8 w-full py-4 bg-emerald-600 text-white rounded-2xl font-black text-xs uppercase">Save & Exit</button>
     </div>
   </div>
 
-  <footer style="text-align:center; font-size:13px; color:gray; margin-top:40px; padding:20px 10px; font-family:'Inter', sans-serif;">
-    © <span id="currentYear"></span> ABN Engineering Department - Utilities.<br>
-    This system is for internal use only.<br>
-    <a href="#" onclick="showDisclaimer()" style="color:#28a745; text-decoration:none; font-weight:500;">View Disclaimer</a><br>
-    <strong id="appVersion"></strong>
-  </footer>
-
-  <script type="module" src="script.js"></script>
   <script>
-    // Auto year update
-  document.getElementById("currentYear").textContent = new Date().getFullYear();
+    const firebaseConfig = { apiKey: "AIzaSyCwtWs9YdZMojl1FwQNXbAF-QRhWCrlWMQ", authDomain: "powercon-nutriveb.firebaseapp.com", projectId: "powercon-nutriveb", storageBucket: "powercon-nutriveb.firebasestorage.app", messagingSenderId: "780606101460", appId: "1:780606101460:web:ce9b6c7b73bb756a5a6841", databaseURL: "https://powercon-nutriveb-default-rtdb.asia-southeast1.firebasedatabase.app" };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
-    // Disclaimer logic
-    function closeDisclaimer() {
-      localStorage.setItem("disclaimerAcknowledged", "true");
-      document.getElementById("disclaimerModal").style.display = "none";
-    }
+    const MOCK_EQUIPMENT = [ { id: '1', name: 'Refrigeration System', loc: 'UTILITIES' }, { id: '2', name: 'Clean Steam Generator', loc: 'UTILITIES' }, { id: '3', name: 'Bulk Chemical System', loc: 'UTILITIES' }, { id: '4', name: 'Condensate Return System', loc: 'UTILITIES' }, { id: '5', name: 'RVAC', loc: 'UTILITIES' }, { id: '6', name: 'BOILER', loc: 'UTILITIES' }, { id: '7', name: 'Compressed Dry Air (CDA)', loc: 'UTILITIES' }, { id: '8', name: 'Waste Water Treatment Plant (WWTP)', loc: 'UTILITIES' }, { id: '9', name: 'Water Treatment Plant (WTP)', loc: 'UTILITIES' }, { id: '10', name: 'Combined Water Storage (CWS)', loc: 'UTILITIES' }, { id: '11', name: 'Sump Pit Pump 1', loc: 'UTILITIES' }, { id: '12', name: 'Freezer & Cold Storage', loc: 'UTILITIES' }, { id: '13', name: 'CIP Line (E7)', loc: 'PROCESS' }, { id: '14', name: 'Bottle Washer (E8)', loc: 'PROCESS' }, { id: '15', name: 'Modular Labeller (E9)', loc: 'PROCESS' }, { id: '16', name: 'Container Conveyor (E10)', loc: 'PROCESS' }, { id: '17', name: 'Conveyor Lubrication (E11)', loc: 'PROCESS' }, { id: '18', name: 'Alwin Soy', loc: 'PROCESS' }, { id: '19', name: 'Process MCC', loc: 'PROCESS' }, { id: '20', name: 'Homogenizer', loc: 'PROCESS' }, { id: '21', name: 'Soya Bean Pre-treatment & Handling', loc: 'PROCESS' }, { id: '22', name: 'Sugar Dissolving', loc: 'PROCESS' }, { id: '23', name: 'Container Dryer (E1)', loc: 'BOTTLING' }, { id: '24', name: 'Packer (E2)', loc: 'BOTTLING' }, { id: '25', name: 'Unpacker (E3)', loc: 'BOTTLING' }, { id: '26', name: 'Container Depalettiser (E4)', loc: 'BOTTLING' }, { id: '27', name: 'Pack Washing (E5)', loc: 'BOTTLING' }, { id: '28', name: 'Inspector (E6)', loc: 'BOTTLING' }, { id: '29', name: 'Pack Conveyor (E12)', loc: 'BOTTLING' }, { id: '30', name: 'Ups', loc: 'BOTTLING' }, { id: '31', name: 'Wrap Round', loc: 'BOTTLING' }, { id: '32', name: 'Hydro Sterilizer', loc: 'BOTTLING' }, { id: '33', name: 'Filler', loc: 'BOTTLING' }, { id: '34', name: 'DPP', loc: 'LVSG 5 LOADS' }, { id: '35', name: 'DLP', loc: 'LVSG 5 LOADS' }, { id: '36', name: 'WareHouse', loc: 'LVSG 5 LOADS' }, { id: '37', name: 'RVAC (220V)', loc: 'LVSG 5 LOADS' }, { id: '38', name: 'WWTP (220V)', loc: 'LVSG 5 LOADS' }, { id: '39', name: 'DP-WM', loc: 'LVSG 5 LOADS' }, { id: '40', name: 'Sumppit Pump2', loc: 'LVSG 5 LOADS' }, { id: '41', name: 'Accumulation Table', loc: 'LVSG 5 LOADS' } ];
 
-    function showDisclaimer() {
-      document.getElementById("disclaimerModal").style.display = "flex";
-    }
+    const fmt = (num) => (num || 0).toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+    const getLocalDate = (d) => { const offset = d.getTimezoneOffset(); const localDate = new Date(d.getTime() - (offset * 60 * 1000)); return localDate.toISOString().split('T')[0]; };
 
-    window.addEventListener("DOMContentLoaded", () => {
-      if (!localStorage.getItem("disclaimerAcknowledged")) {
-        document.getElementById("disclaimerModal").style.display = "flex";
-      }
+    let pressTimer;
+    let isLongPress = false;
+
+    // Desktop Keyboard Support
+    document.addEventListener('keydown', (e) => {
+        if(app.state.view !== 'reading') return;
+        const key = e.key;
+        if(/[0-9]/.test(key)) { handleKey(key); animateKey(key); }
+        else if(key === '.') { handleKey('.'); animateKey('.'); }
+        else if(key === 'Backspace') { handleKey('⌫'); animateKey('⌫'); }
+        else if(key === 'Enter') { window.enterNext(); }
     });
+
+    function animateKey(k) {
+        const btn = Array.from(document.querySelectorAll('.num-btn')).find(b => b.innerText === k);
+        if(btn) { btn.classList.add('active-key'); setTimeout(() => btn.classList.remove('active-key'), 100); }
+    }
+
+    class PowerCon {
+      constructor() {
+        this.state = { view: 'home', currentIndex: 0, date: getLocalDate(new Date()), filterDate: getLocalDate(new Date()), sessionReadings: [], cloudReadings: {}, yesterdayReadings: {}, loading: false, isSingleEdit: false, isEditingFromReview: false};
+        this.init();
+      }
+      async init() { loadSavedTheme(); this.render(); await this.syncWithCloud(); }
+      async syncWithCloud(targetDate = null) {
+        this.state.loading = true; this.render();
+        const dateToQuery = targetDate || this.state.date;
+        try {
+          const snapshot = await db.ref('readings/' + dateToQuery).once('value');
+          this.state.cloudReadings = snapshot.val() || {};
+          const d = new Date(dateToQuery); d.setDate(d.getDate() - 1);
+          const yKey = getLocalDate(d);
+          const ySnap = await db.ref('readings/' + yKey).once('value');
+          this.state.yesterdayReadings = ySnap.val() || {};
+          MOCK_EQUIPMENT.forEach((eq, i) => { if(this.state.cloudReadings[eq.id]) this.state.sessionReadings[i] = this.state.cloudReadings[eq.id]; });
+        } catch(e) { console.error(e); }
+        this.state.loading = false; this.render();
+      }
+      render() { document.getElementById('app').innerHTML = this[`${this.state.view}HTML`](); }
+
+      homeHTML() {
+        return `<div class="p-8 max-w-sm mx-auto flex flex-col justify-center min-h-screen text-center">
+            <h1 class="text-6xl font-black italic tracking-tighter mb-2">POWER<span class="text-emerald-500">CON</span></h1>
+            <p class="text-[9px] font-bold uppercase tracking-[0.3em] mb-12 opacity-40">Nutriveb Corporation</p>
+            <div class="glass-card rounded-[2.5rem] p-6 mb-4 border border-white/20 shadow-xl">
+                <label class="text-[9px] font-black uppercase mb-3 block tracking-widest opacity-60">Reading Date</label>
+                <input type="date" value="${this.state.date}" class="w-full bg-transparent border-2 border-emerald-500/20 p-4 rounded-2xl font-bold text-center outline-none" onchange="app.state.date=this.value; app.syncWithCloud()">
+            </div>
+            <button onclick="app.start()" class="w-full bg-emerald-600 text-white font-black py-6 rounded-[2rem] shadow-xl text-xl mb-3 active:scale-95 transition-all">START READING</button>
+            <button onclick="app.state.view='records';app.state.filterDate=app.state.date;app.syncWithCloud(app.state.date)" class="w-full bg-slate-900 text-white font-bold py-5 rounded-[2rem] text-xs uppercase tracking-widest active:scale-95 transition-all mb-8">VIEW LOGSHEETS</button>
+            <button onclick="toggleSettings()" class="text-[9px] font-black uppercase tracking-widest opacity-40 py-2 px-6 border border-current rounded-full mx-auto mb-4">UI Settings</button>
+            <p class="text-[8px] font-bold opacity-30 uppercase tracking-widest">© ${new Date().getFullYear()} Nutriveb Corporation | Built for Utility Monitoring</p>
+        </div>`;
+      }
+
+      readingHTML() {
+        const eq = MOCK_EQUIPMENT[this.state.currentIndex];
+        const progress = ((this.state.currentIndex + 1) / MOCK_EQUIPMENT.length) * 100;
+        let autoPrev = (this.state.yesterdayReadings && this.state.yesterdayReadings[eq.id]) ? this.state.yesterdayReadings[eq.id].curr : '0.000';
+        return `<div class="p-4 max-w-xl mx-auto min-h-screen flex flex-col">
+          <div class="w-full h-1.5 bg-emerald-900/10 rounded-full mb-4 overflow-hidden"><div class="h-full bg-emerald-500 transition-all" style="width:${progress}%"></div></div>
+          <div class="flex justify-between items-center mb-1"><span class="text-[9px] font-black bg-emerald-600 text-white px-3 py-1 rounded-lg uppercase">${eq.loc}</span><span class="text-xs font-bold font-mono-numbers opacity-50">${this.state.currentIndex+1}/${MOCK_EQUIPMENT.length}</span></div>
+          <h2 class="text-xl font-black mb-4 truncate">${eq.name}</h2>
+          <div class="space-y-2 mb-4">
+            <div class="glass-card p-3 rounded-xl flex justify-between items-center"><span class="text-[9px] font-black uppercase opacity-50">Prev Reading</span><input type="text" id="p" value="${autoPrev}" class="bg-transparent text-right font-bold outline-none w-1/2" ${this.state.isSingleEdit ? '' : 'readonly'}></div>
+            <div class="glass-card p-5 rounded-[1.5rem] border-2 border-emerald-500 shadow-xl"><label class="text-[8px] font-black uppercase block text-center mb-1 opacity-60">Current Input</label><input type="text" id="c" class="w-full bg-transparent text-4xl font-black text-center text-emerald-600 outline-none" placeholder="0.000" readonly></div>
+          </div>
+          <div class="grid grid-cols-3 gap-2 mb-4">
+            ${['1','2','3','4','5','6','7','8','9','.', '0', '⌫'].map(k => {
+                if(k === '0') {
+                    return `<button class="num-btn" 
+                        onmousedown="startPress()" 
+                        onmouseup="endPress('0')" 
+                        ontouchstart="startPress(); event.preventDefault();" 
+                        ontouchend="endPress('0'); event.preventDefault();">${k}</button>`;
+                }
+                return `<button class="num-btn" onclick="handleKey('${k}')">${k}</button>`;
+            }).join('')}
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <button onclick="app.exitReading()" class="py-4 font-bold uppercase text-[10px] opacity-50">Cancel</button>
+            <button onclick="window.enterNext()" class="bg-emerald-600 text-white font-black py-4 rounded-2xl shadow-lg uppercase italic text-sm">
+    ${this.state.isEditingFromReview || this.state.isSingleEdit ? 'UPDATE READING ✓' : 'Submit & Next ➔'}
+</button>
+          </div>
+        </div>`;
+      }
+
+    recordsHTML() {
+  let grandTotal = 0;
+  MOCK_EQUIPMENT.forEach(eq => {
+    const r = this.state.cloudReadings[eq.id];
+    if (r && r.usage) grandTotal += parseFloat(r.usage);
+  });
+  const meta = this.state.cloudReadings['metadata'] || {};
+
+  // Default category colors
+  const defaultColors = {
+    "UTILITIES": "#ef4444",   // red
+    "PROCESS": "#3b82f6",     // blue
+    "BOTTLING": "#f59e0b",    // amber
+    "LVSG 5 LOADS": "#10b981" // emerald
+  };
+
+  // User-customized colors (if any)
+  const colors = this.state.userColors || defaultColors;
+
+  // Text color for contrast
+  const getContrast = (hex) => {
+    if(!hex) return "#fff";
+    hex = hex.replace('#','');
+    const r = parseInt(hex.substr(0,2),16);
+    const g = parseInt(hex.substr(2,2),16);
+    const b = parseInt(hex.substr(4,2),16);
+    const yiq = ((r*299)+(g*587)+(b*114))/1000;
+    return yiq >= 128 ? "#000000" : "#ffffff";
+  };
+
+  return `<div class="p-4 max-w-xl mx-auto min-h-screen pb-40">
+    <div class="flex justify-between items-center mb-6 pt-4">
+      <button onclick="app.state.view='home';app.render()" class="font-black text-[10px] tracking-widest px-4 py-2 bg-white/10 rounded-xl border border-white/20">← BACK</button>
+      <input type="date" value="${this.state.filterDate}" onchange="app.state.filterDate=this.value; app.syncWithCloud(this.value)" class="bg-white/10 px-4 py-2 rounded-xl font-bold text-xs border border-white/20 text-emerald-500 outline-none">
+    </div>
+
+    <div class="glass-card p-8 rounded-[2rem] shadow-2xl mb-8 border-b-8 border-emerald-500 text-center">
+      <h3 class="text-[9px] font-black uppercase tracking-widest mb-2 opacity-60">Daily Consumption</h3>
+      <div class="text-4xl font-black font-mono-numbers mb-2">${fmt(grandTotal)} <span class="text-[10px] font-sans">kWh</span></div>
+      <div class="flex justify-center items-center gap-2 mt-2">
+        <div class="h-[1px] w-4 bg-emerald-500/30"></div>
+        <p class="text-[9px] font-black uppercase text-emerald-500">OPERATOR: ${meta.operator || 'UNSPECIFIED'}</p>
+        <div class="h-[1px] w-4 bg-emerald-500/30"></div>
+      </div>
+    </div>
+
+    <div class="space-y-4">
+      ${["UTILITIES", "PROCESS", "BOTTLING", "LVSG 5 LOADS"].map(cat => {
+        const catColor = colors[cat] || defaultColors[cat];
+        const catText = getContrast(catColor);
+
+        return `<div>
+          <div class="px-2 mb-2 text-[10px] font-black uppercase tracking-[0.2em] rounded px-2 py-1 inline-block" style="background-color:${catColor}33; color:${catText};">
+            ${cat}
+          </div>
+          <div class="space-y-2">
+            ${MOCK_EQUIPMENT.filter(e => e.loc === cat).map(e => {
+              const r = this.state.cloudReadings[e.id] || { prev: 0, curr: 0, usage: 0 };
+              const currBg = `${catColor}33`; // semi-transparent
+              const currText = getContrast(catColor);
+
+              return `<div class="glass-card p-4 rounded-2xl flex items-center justify-between" onclick="app.editFromDashboard('${e.id}')">
+                <div class="flex-1">
+                  <p class="text-[10px] font-white uppercase mb-1">${e.name}</p>
+                  <div class="text-[9px] font-mono-numbers text-white space-y-0.5">
+                    <div>
+                      <span class="opacity-50">Previous:</span>
+                      <span class="opacity-70">${fmt(r.prev)}</span>
+                    </div>
+                    <div>
+                      <span class="font-semibold" style="color:${catColor}">Current:</span>
+                      <input type="text" value="${r.curr.toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 3 })}"
+                        class="px-1.5 py-0.5 rounded font-bold text-[14px] w-24 text-center"
+                        style="background-color:${currBg}; color:${currText}"
+                        ${this.state.isAdmin ? `onchange="app.saveReading(this.value, '${e.id}')"` : 'readonly'}>
+                    </div>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <p class="text-[16px] font-mono-numbers font-white text-emerald-600">${fmt(r.usage)}</p>
+                </div>
+              </div>`;
+            }).join('')}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+
+    <div class="fixed bottom-0 left-0 w-full p-4 bg-transparent backdrop-blur-md flex gap-3">
+      <button onclick="app.exportToExcel()" class="flex-1 bg-slate-900 text-white py-4 rounded-xl font-black text-[10px] uppercase">Download Excel</button>
+      <button onclick="window.open('logsheet.html?date=' + app.state.filterDate, '_blank')" class="flex-1 bg-emerald-600 text-white py-4 rounded-xl font-black text-[10px] uppercase">Print Log</button>
+    </div>
+  </div>`;
+}
+      async start() { await this.syncWithCloud(); this.state.isSingleEdit = false; let firstEmpty = 0; for(let i=0; i<MOCK_EQUIPMENT.length; i++) { if(!this.state.cloudReadings[MOCK_EQUIPMENT[i].id]) { firstEmpty = i; break; } } this.state.currentIndex = firstEmpty; this.state.view = 'reading'; this.render(); }
+      exitReading() { 
+    if (this.state.isEditingFromReview) {
+        this.state.isEditingFromReview = false;
+        this.state.view = 'review';
+    } else {
+        this.state.view = this.state.isSingleEdit ? 'records' : 'home'; 
+    }
+    this.state.isSingleEdit = false; 
+    this.render(); 
+}
+      async saveReading(curr, prevInput) {
+    const eq = MOCK_EQUIPMENT[this.state.currentIndex];
+    const current = parseFloat(parseFloat(curr || 0).toFixed(3));
+    const prev = parseFloat(parseFloat(prevInput || 0).toFixed(3));
+    const usage = parseFloat((current - prev).toFixed(3));
+    
+    if (current < prev && !confirm("⚠️ Current lower than previous. Save anyway?")) return;
+    
+    const data = { id: eq.id, name: eq.name, loc: eq.loc, curr: current, prev: prev, usage: usage };
+    this.state.sessionReadings[this.state.currentIndex] = data;
+
+    // CHECK KUNG SAAN PUPUNTA PAGKAPINDOT NG NEXT/SUBMIT
+    if (this.state.isSingleEdit) {
+        // Galing sa Main Dashboard (Admin edit)
+        await db.ref(`readings/${this.state.filterDate}/${eq.id}`).set(data);
+        this.state.isSingleEdit = false; 
+        this.state.view = 'records'; 
+        await this.syncWithCloud(this.state.filterDate);
+    } 
+    else if (this.state.isEditingFromReview) {
+        // FIX: Pag galing sa Review, balik lang sa Review list
+        this.state.isEditingFromReview = false; // Reset flag
+        this.state.view = 'review'; 
+        this.render();
+    } 
+    else {
+        // Normal sequence (Next, Next, Next...)
+        if (this.state.currentIndex < MOCK_EQUIPMENT.length - 1) { 
+            this.state.currentIndex++; 
+            this.render(); 
+        } else { 
+            this.state.view = 'review'; 
+            this.render(); 
+        }
+    }
+}
+
+      reviewHTML() {
+        return `<div class="p-6 max-w-xl mx-auto flex flex-col min-h-screen">
+          <h2 class="text-3xl font-black mb-6 italic pt-10">Review Log</h2>
+          <div class="glass-card rounded-[2rem] flex-1 mb-8 overflow-y-auto">
+             <table class="w-full">${this.state.sessionReadings.map((r, i) => r ? `<tr onclick="app.editFromReview(${i})" class="border-b border-white/5"><td class="p-4 font-black uppercase text-[9px] opacity-70">${r.name}</td><td class="p-4 text-right font-mono-numbers font-black text-emerald-500">${fmt(r.curr)}</td></tr>` : '').join('')}</table>
+          </div>
+          <button onclick="app.openNameModal()" class="w-full bg-emerald-600 text-white font-black py-6 rounded-3xl shadow-xl text-lg uppercase italic mb-8">Finalize Submission ✓</button>
+        </div>`;
+      }
+
+      openNameModal() {
+          const modal = document.getElementById('nameModal'); modal.classList.remove('hidden');
+          const recent = JSON.parse(localStorage.getItem('recentOperators') || '[]');
+          document.getElementById('recentNamesList').innerHTML = recent.map(name => `<button onclick="document.getElementById('opNameInput').value='${name}'; app.confirmFinalSave()" class="text-[9px] bg-emerald-500/10 text-current px-4 py-2 rounded-xl font-bold uppercase m-1 border border-emerald-500/20">${name}</button>`).join('');
+      }
+
+      async confirmFinalSave() {
+        const opName = document.getElementById('opNameInput').value.trim().toUpperCase();
+        if(!opName) return alert("Enter Operator Name!");
+        let recent = JSON.parse(localStorage.getItem('recentOperators') || '[]'); recent = [opName, ...recent.filter(n => n !== opName)].slice(0, 5); localStorage.setItem('recentOperators', JSON.stringify(recent));
+        const updates = {}; this.state.sessionReadings.forEach(r => { if(r) updates[`/readings/${this.state.date}/${r.id}`] = r; });
+        updates[`/readings/${this.state.date}/metadata`] = { operator: opName, timestamp: Date.now() };
+        await db.ref().update(updates); document.getElementById('nameModal').classList.add('hidden');
+        this.state.view = 'records'; this.state.filterDate = this.state.date; await this.syncWithCloud(this.state.date);
+      }
+
+      editFromReview(i) { this.state.currentIndex = i; this.state.isEditingFromReview = true; this.state.view = 'reading'; this.render(); }
+      editFromDashboard(id) { const pin = prompt("Admin PIN:"); if (pin === "abnpower") { const index = MOCK_EQUIPMENT.findIndex(e => e.id === id); if (index !== -1) { this.state.isSingleEdit = true; this.state.currentIndex = index; this.state.view = 'reading'; this.render(); } } }
+      exportToExcel() {
+        let csv = "ID,Equipment,Location,Previous,Current,Usage\n";
+        MOCK_EQUIPMENT.forEach(eq => { const r = this.state.cloudReadings[eq.id] || { prev: 0, curr: 0, usage: 0 }; csv += `${eq.id},"${eq.name}",${eq.loc},${r.prev},${r.curr},${r.usage}\n`; });
+        const blob = new Blob([csv], { type: 'text/csv' }); const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `Log_${this.state.filterDate}.csv`; link.click();
+      }
+    }
+
+    // UTILS
+    window.toggleSettings = () => document.getElementById('settingsModal').classList.toggle('hidden');
+    window.updateOpacity = (v) => { document.documentElement.style.setProperty('--glass-opacity', v); localStorage.setItem('p_op', v); };
+    
+    window.setBg = (s, mode) => { 
+      const b = document.getElementById('bodyBg'); 
+      b.style.backgroundImage = s.includes('gradient') || s.includes('url') ? s : 'none';
+      b.style.backgroundColor = s.includes('gradient') || s.includes('url') ? 'transparent' : s;
+      document.body.className = `h-full ${mode}-mode`;
+      localStorage.setItem('p_bg', s); localStorage.setItem('p_mode', mode); 
+    };
+
+    window.handleImageUpload = (e) => { 
+        const r = new FileReader(); 
+        r.onload = (ev) => setBg(`url(${ev.target.result})`, 'dark'); 
+        r.readAsDataURL(e.target.files[0]); 
+    };
+
+    function loadSavedTheme() { 
+        const t = localStorage.getItem('p_bg'); 
+        const m = localStorage.getItem('p_mode') || 'dark'; 
+        const o = localStorage.getItem('p_op') || 0.8; 
+        const defaultBg = "url('assets/bg.jpg')"; 
+        updateOpacity(o);
+        if (t && t.includes('url')) {
+            const img = new Image();
+            img.onload = () => setBg(t, m);
+            img.onerror = () => setBg(defaultBg, 'dark');
+            img.src = t.replace(/url\(['"]?(.*?)['"]?\)/, '$1');
+        } else if (t) { setBg(t, m); } else { setBg(defaultBg, 'dark'); }
+    }
+
+    window.handleKey = (k) => { 
+        const c = document.getElementById('c'); 
+        if(!c) return;
+        if (k === '⌫') c.value = c.value.slice(0, -1); 
+        else if (k === '.') { if (!c.value.includes('.')) c.value += '.'; } 
+        else { if (c.value.includes('.') && c.value.split('.')[1].length >= 3) return; c.value += k; } 
+    };
+
+    window.enterNext = () => { 
+        const c = document.getElementById('c'); 
+        const p = document.getElementById('p'); 
+        if(!c || (c.value === "" && !app.state.isSingleEdit)) return; 
+        app.saveReading(c.value, p.value); 
+    };
+
+    window.startPress = () => { 
+        isLongPress = false; 
+        pressTimer = setTimeout(() => { 
+            isLongPress = true; 
+            const display = document.getElementById('c');
+            if(display) display.value = "";
+            if(navigator.vibrate) navigator.vibrate(50);
+        }, 600); 
+    };
+
+    window.endPress = (k) => { 
+        clearTimeout(pressTimer); 
+        if(!isLongPress) { handleKey(k); }
+    };
+
+    const app = new PowerCon();
   </script>
+
+  <div id="nameModal" class="modal hidden">
+    <div class="modal-content rounded-[2.5rem] p-8 w-full max-w-sm text-center shadow-2xl">
+        <h3 class="text-xl font-black uppercase italic mb-2 text-emerald-500">Identity Login</h3>
+        <p class="text-[9px] opacity-50 mb-6 uppercase tracking-widest">Identify operator to sync logs</p>
+        <div id="recentNamesList" class="mb-6 flex flex-wrap justify-center"></div>
+        <input type="text" id="opNameInput" class="w-full bg-emerald-500/5 p-5 rounded-2xl text-center font-black outline-none mb-6 uppercase border-2 border-emerald-500/20 focus:border-emerald-500 transition-all" placeholder="OPERATOR NAME...">
+        <button onclick="app.confirmFinalSave()" class="w-full bg-emerald-600 text-white py-5 rounded-2xl font-black uppercase italic shadow-lg active:scale-95 transition-all">Submit & Sync</button>
+    </div>
+  </div>
+
 </body>
 </html>
