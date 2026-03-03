@@ -237,10 +237,13 @@
       }
 recordsHTML() {
   let grandTotal = 0;
+
+  // Calculate grand total from cloud readings
   MOCK_EQUIPMENT.forEach(eq => {
     const r = this.state.cloudReadings[eq.id];
     if (r && r.usage) grandTotal += parseFloat(r.usage);
   });
+
   const meta = this.state.cloudReadings['metadata'] || {};
 
   // Default category colors
@@ -251,6 +254,7 @@ recordsHTML() {
     "LVSG 5 LOADS": "#10b981" // emerald
   };
 
+  // Use user-customized colors if available
   const colors = this.state.userColors || defaultColors;
 
   // Text color for contrast
@@ -264,27 +268,27 @@ recordsHTML() {
     return yiq >= 128 ? "#000000" : "#ffffff";
   };
 
-  // Custom display order
+  // Custom display order of equipment
   const customOrder = [
-    "Ref",
-    "Clean steam generator",
-    "Bulk chemical system",
-    "Condensate return system",
-    "Rvac",
+    "Refrigeration System",
+    "Clean Steam Generator",
+    "Bulk Chemical System",
+    "Condensate Return System",
+    "RVAC",
     "Boiler",
-    "Compressed dry air (CDA)",
-    "Waste Water Treatment Plant (Wwtp)",
-    "Water Treatment Plant (Wtp)",
-    "Combine Water Storage (CWS)",
-    "Sumppit pump1",
+    "Compressed Dry Air (CDA)",
+    "Waste Water Treatment Plant (WWTP)",
+    "Water Treatment Plant (WTP)",
+    "Combined Water Storage (CWS)",
+    "Sump Pit Pump 1",
     "Freezer & Cold Storage",
-    "Cip Line (E7)",
+    "CIP Line (E7)",
     "Bottle Washer (E8)",
     "Modular Labeller (E9)",
     "Container Conveyor (E10)",
-    "Conveyor Lubricator (E11)",
-    "Alwin soy",
-    "Process mcc",
+    "Conveyor Lubrication (E11)",
+    "Alwin Soy",
+    "Process MCC",
     "Homogenizer",
     "Soya Bean Pre-treatment & Handling",
     "Sugar Dissolving",
@@ -299,22 +303,25 @@ recordsHTML() {
     "Wrap Around",
     "Hydro Sterilizer",
     "Filler",
-    "Dpp",
-    "Dlp",
+    "DPP",
+    "DLP",
     "Warehouse",
-    "RVAC(220v)",
-    "Wwtp (220v)",
-    "Dp-wm",
-    "Sumpit Pump2",
+    "RVAC (220V)",
+    "WWTP (220V)",
+    "DP-WM",
+    "Sump Pit Pump 2",
     "Accumulation Table"
   ];
 
   return `<div class="p-4 max-w-xl mx-auto min-h-screen pb-40">
+
+    <!-- Top controls -->
     <div class="flex justify-between items-center mb-6 pt-4">
       <button onclick="app.state.view='home';app.render()" class="font-black text-[10px] tracking-widest px-4 py-2 bg-white/10 rounded-xl border border-white/20">← BACK</button>
       <input type="date" value="${this.state.filterDate}" onchange="app.state.filterDate=this.value; app.syncWithCloud(this.value)" class="bg-white/10 px-4 py-2 rounded-xl font-bold text-xs border border-white/20 text-emerald-500 outline-none">
     </div>
 
+    <!-- Daily consumption summary -->
     <div class="glass-card p-8 rounded-[2rem] shadow-2xl mb-8 border-b-8 border-emerald-500 text-center">
       <h3 class="text-[9px] font-black uppercase tracking-widest mb-2 opacity-60">Daily Consumption</h3>
       <div class="text-4xl font-black font-mono-numbers mb-2">${fmt(grandTotal)} <span class="text-[10px] font-sans">kWh</span></div>
@@ -325,11 +332,13 @@ recordsHTML() {
       </div>
     </div>
 
+    <!-- Equipment list -->
     <div class="space-y-4">
       ${customOrder.map(name => {
-        // Case-insensitive match para sa exact equipment
+        // Find the equipment from MOCK_EQUIPMENT (case-insensitive)
         const e = MOCK_EQUIPMENT.find(eq => eq.name.toLowerCase() === name.toLowerCase());
-        if (!e) return ''; // skip kung wala sa MOCK_EQUIPMENT
+        if (!e) return ''; // skip if not found
+
         const r = this.state.cloudReadings[e.id] || { prev: 0, curr: 0, usage: 0 };
         const catColor = colors[e.loc] || defaultColors[e.loc] || "#3b82f6";
         const currBg = `${catColor}33`; // semi-transparent
@@ -359,10 +368,12 @@ recordsHTML() {
       }).join('')}
     </div>
 
+    <!-- Bottom controls -->
     <div class="fixed bottom-0 left-0 w-full p-4 bg-transparent backdrop-blur-md flex gap-3">
       <button onclick="app.exportToExcel()" class="flex-1 bg-slate-900 text-white py-4 rounded-xl font-black text-[10px] uppercase">Download Excel</button>
       <button onclick="window.open('logsheet.html?date=' + app.state.filterDate, '_blank')" class="flex-1 bg-emerald-600 text-white py-4 rounded-xl font-black text-[10px] uppercase">Print Log</button>
     </div>
+
   </div>`;
 }
       async start() { await this.syncWithCloud(); this.state.isSingleEdit = false; let firstEmpty = 0; for(let i=0; i<MOCK_EQUIPMENT.length; i++) { if(!this.state.cloudReadings[MOCK_EQUIPMENT[i].id]) { firstEmpty = i; break; } } this.state.currentIndex = firstEmpty; this.state.view = 'reading'; this.render(); }
