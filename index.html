@@ -251,21 +251,20 @@ recordsHTML() {
     "LVSG 5 LOADS": "#10b981" // emerald
   };
 
-  // User-customized colors (if any)
   const colors = this.state.userColors || defaultColors;
 
   // Text color for contrast
   const getContrast = (hex) => {
     if (!hex) return "#fff";
-    hex = hex.replace('#', '');
-    const r = parseInt(hex.substr(0, 2), 16);
-    const g = parseInt(hex.substr(2, 2), 16);
-    const b = parseInt(hex.substr(4, 2), 16);
-    const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+    hex = hex.replace('#','');
+    const r = parseInt(hex.substr(0,2),16);
+    const g = parseInt(hex.substr(2,2),16);
+    const b = parseInt(hex.substr(4,2),16);
+    const yiq = ((r*299)+(g*587)+(b*114))/1000;
     return yiq >= 128 ? "#000000" : "#ffffff";
   };
 
-  // Custom equipment order
+  // Custom display order
   const customOrder = [
     "Ref",
     "Clean steam generator",
@@ -328,10 +327,11 @@ recordsHTML() {
 
     <div class="space-y-4">
       ${customOrder.map(name => {
-        const e = MOCK_EQUIPMENT.find(eq => eq.name === name);
-        if (!e) return ''; // skip if not found
+        // Case-insensitive match para sa exact equipment
+        const e = MOCK_EQUIPMENT.find(eq => eq.name.toLowerCase() === name.toLowerCase());
+        if (!e) return ''; // skip kung wala sa MOCK_EQUIPMENT
         const r = this.state.cloudReadings[e.id] || { prev: 0, curr: 0, usage: 0 };
-        const catColor = colors[e.loc] || defaultColors[e.loc] || "#3b82f6"; // use loc color
+        const catColor = colors[e.loc] || defaultColors[e.loc] || "#3b82f6";
         const currBg = `${catColor}33`; // semi-transparent
         const currText = getContrast(catColor);
 
