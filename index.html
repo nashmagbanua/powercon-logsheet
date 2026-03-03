@@ -104,8 +104,47 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    const MOCK_EQUIPMENT = [ { id: '1', name: 'Refrigeration System', loc: 'UTILITIES' }, { id: '2', name: 'Clean Steam Generator', loc: 'UTILITIES' }, { id: '3', name: 'Bulk Chemical System', loc: 'UTILITIES' }, { id: '4', name: 'Condensate Return System', loc: 'UTILITIES' }, { id: '5', name: 'RVAC', loc: 'UTILITIES' }, { id: '6', name: 'BOILER', loc: 'UTILITIES' }, { id: '7', name: 'Compressed Dry Air (CDA)', loc: 'UTILITIES' }, { id: '8', name: 'Waste Water Treatment Plant (WWTP)', loc: 'UTILITIES' }, { id: '9', name: 'Water Treatment Plant (WTP)', loc: 'UTILITIES' }, { id: '10', name: 'Combined Water Storage (CWS)', loc: 'UTILITIES' }, { id: '11', name: 'Sump Pit Pump 1', loc: 'UTILITIES' }, { id: '12', name: 'Freezer & Cold Storage', loc: 'UTILITIES' }, { id: '13', name: 'CIP Line (E7)', loc: 'PROCESS' }, { id: '14', name: 'Bottle Washer (E8)', loc: 'PROCESS' }, { id: '15', name: 'Modular Labeller (E9)', loc: 'PROCESS' }, { id: '16', name: 'Container Conveyor (E10)', loc: 'PROCESS' }, { id: '17', name: 'Conveyor Lubrication (E11)', loc: 'PROCESS' }, { id: '18', name: 'Alwin Soy', loc: 'PROCESS' }, { id: '19', name: 'Process MCC', loc: 'PROCESS' }, { id: '20', name: 'Homogenizer', loc: 'PROCESS' }, { id: '21', name: 'Soya Bean Pre-treatment & Handling', loc: 'PROCESS' }, { id: '22', name: 'Sugar Dissolving', loc: 'PROCESS' }, { id: '23', name: 'Container Dryer (E1)', loc: 'BOTTLING' }, { id: '24', name: 'Packer (E2)', loc: 'BOTTLING' }, { id: '25', name: 'Unpacker (E3)', loc: 'BOTTLING' }, { id: '26', name: 'Container Depalettiser (E4)', loc: 'BOTTLING' }, { id: '27', name: 'Pack Washing (E5)', loc: 'BOTTLING' }, { id: '28', name: 'Inspector (E6)', loc: 'BOTTLING' }, { id: '29', name: 'Pack Conveyor (E12)', loc: 'BOTTLING' }, { id: '30', name: 'Ups', loc: 'BOTTLING' }, { id: '31', name: 'Wrap Round', loc: 'BOTTLING' }, { id: '32', name: 'Hydro Sterilizer', loc: 'BOTTLING' }, { id: '33', name: 'Filler', loc: 'BOTTLING' }, { id: '34', name: 'DPP', loc: 'LVSG 5 LOADS' }, { id: '35', name: 'DLP', loc: 'LVSG 5 LOADS' }, { id: '36', name: 'WareHouse', loc: 'LVSG 5 LOADS' }, { id: '37', name: 'RVAC (220V)', loc: 'LVSG 5 LOADS' }, { id: '38', name: 'WWTP (220V)', loc: 'LVSG 5 LOADS' }, { id: '39', name: 'DP-WM', loc: 'LVSG 5 LOADS' }, { id: '40', name: 'Sumppit Pump2', loc: 'LVSG 5 LOADS' }, { id: '41', name: 'Accumulation Table', loc: 'LVSG 5 LOADS' } ];
-
+    const MOCK_EQUIPMENT = [ { id: '1', name: 'Refrigeration System', loc: 'UTILITIES' },
+                            { id: '4', name: 'Condensate Return System', loc: 'UTILITIES' },
+                            { id: '2', name: 'Clean Steam Generator', loc: 'UTILITIES' }, 
+                            { id: '3', name: 'Bulk Chemical System', loc: 'UTILITIES' },  
+                            { id: '5', name: 'RVAC', loc: 'UTILITIES' },
+                            { id: '9', name: 'Water Treatment Plant (WTP)', loc: 'UTILITIES' },
+                            { id: '6', name: 'BOILER', loc: 'UTILITIES' }, 
+                            { id: '7', name: 'Compressed Dry Air (CDA)', loc: 'UTILITIES' }, 
+                            { id: '8', name: 'Waste Water Treatment Plant (WWTP)', loc: 'UTILITIES' }, 
+                            { id: '10', name: 'Combined Water Storage (CWS)', loc: 'UTILITIES' }, 
+                            { id: '11', name: 'Sump Pit Pump 1', loc: 'UTILITIES' }, 
+                            { id: '12', name: 'Freezer & Cold Storage', loc: 'UTILITIES' },
+                            { id: '21', name: 'Soya Bean Pre-treatment & Handling', loc: 'PROCESS' },
+                            { id: '18', name: 'Alwin Soy', loc: 'PROCESS' },
+                            { id: '20', name: 'Homogenizer', loc: 'PROCESS' },
+                            { id: '16', name: 'Container Conveyor (E10)', loc: 'PROCESS' },
+                            { id: '19', name: 'Process MCC', loc: 'PROCESS' },
+                            { id: '14', name: 'Bottle Washer (E8)', loc: 'PROCESS' },
+                            { id: '26', name: 'Container Depalettiser (E4)', loc: 'BOTTLING' },
+                            { id: '29', name: 'Pack Conveyor (E12)', loc: 'BOTTLING' },
+                            { id: '22', name: 'Sugar Dissolving', loc: 'PROCESS' },
+                            { id: '33', name: 'Filler', loc: 'BOTTLING' },
+                            { id: '15', name: 'Modular Labeller (E9)', loc: 'PROCESS' },
+                            { id: '32', name: 'Hydro Sterilizer', loc: 'BOTTLING' },
+                            { id: '23', name: 'Container Dryer (E1)', loc: 'BOTTLING' },
+                            { id: '25', name: 'Unpacker (E3)', loc: 'BOTTLING' },
+                            { id: '13', name: 'CIP Line (E7)', loc: 'PROCESS' }, 
+                            { id: '17', name: 'Conveyor Lubrication (E11)', loc: 'PROCESS' },
+                            { id: '41', name: 'Accumulation Table', loc: 'LVSG 5 LOADS' },
+                            { id: '28', name: 'Inspector (E6)', loc: 'BOTTLING' },
+                            { id: '27', name: 'Pack Washing (E5)', loc: 'BOTTLING' },
+                            { id: '24', name: 'Packer (E2)', loc: 'BOTTLING' },
+                            { id: '30', name: 'Ups', loc: 'BOTTLING' },
+                            { id: '31', name: 'Wrap Round', loc: 'BOTTLING' },
+                            { id: '39', name: 'DP-WM', loc: 'LVSG 5 LOADS' },
+                            { id: '34', name: 'DPP', loc: 'LVSG 5 LOADS' },
+                            { id: '40', name: 'Sumppit Pump2', loc: 'LVSG 5 LOADS' },
+                            { id: '38', name: 'WWTP (220V)', loc: 'LVSG 5 LOADS' },
+                            { id: '35', name: 'DLP', loc: 'LVSG 5 LOADS' },
+                            { id: '36', name: 'WareHouse', loc: 'LVSG 5 LOADS' },
+                            { id: '37', name: 'RVAC (220V)', loc: 'LVSG 5 LOADS' }]; 
     const fmt = (num) => (num || 0).toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 3 });
     const getLocalDate = (d) => { const offset = d.getTimezoneOffset(); const localDate = new Date(d.getTime() - (offset * 60 * 1000)); return localDate.toISOString().split('T')[0]; };
 
