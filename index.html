@@ -100,435 +100,299 @@
   </div>
 
   <script>
-    const firebaseConfig = { apiKey: "AIzaSyCwtWs9YdZMojl1FwQNXbAF-QRhWCrlWMQ", authDomain: "powercon-nutriveb.firebaseapp.com", projectId: "powercon-nutriveb", storageBucket: "powercon-nutriveb.firebasestorage.app", messagingSenderId: "780606101460", appId: "1:780606101460:web:ce9b6c7b73bb756a5a6841", databaseURL: "https://powercon-nutriveb-default-rtdb.asia-southeast1.firebasedatabase.app" };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+   const firebaseConfig = { apiKey: "AIzaSyCwtWs9YdZMojl1FwQNXbAF-QRhWCrlWMQ", authDomain: "powercon-nutriveb.firebaseapp.com", projectId: "powercon-nutriveb", storageBucket: "powercon-nutriveb.firebasestorage.app", messagingSenderId: "780606101460", appId: "1:780606101460:web:ce9b6c7b73bb756a5a6841", databaseURL: "https://powercon-nutriveb-default-rtdb.asia-southeast1.firebasedatabase.app" };
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
 
-    const MOCK_EQUIPMENT = [ { id: '1', name: 'Refrigeration System', loc: 'UTILITIES' },
-                            { id: '4', name: 'Condensate Return System', loc: 'UTILITIES' },
-                            { id: '2', name: 'Clean Steam Generator', loc: 'UTILITIES' }, 
-                            { id: '3', name: 'Bulk Chemical System', loc: 'UTILITIES' },  
-                            { id: '5', name: 'RVAC', loc: 'UTILITIES' },
-                            { id: '9', name: 'Water Treatment Plant (WTP)', loc: 'UTILITIES' },
-                            { id: '6', name: 'BOILER', loc: 'UTILITIES' }, 
-                            { id: '7', name: 'Compressed Dry Air (CDA)', loc: 'UTILITIES' }, 
-                            { id: '8', name: 'Waste Water Treatment Plant (WWTP)', loc: 'UTILITIES' }, 
-                            { id: '21', name: 'Soya Bean Pre-treatment & Handling', loc: 'PROCESS' },
-                            { id: '10', name: 'Combined Water Storage (CWS)', loc: 'UTILITIES' }, 
-                            { id: '11', name: 'Sump Pit Pump 1', loc: 'UTILITIES' }, 
-                            { id: '12', name: 'Freezer & Cold Storage', loc: 'UTILITIES' },
-                            { id: '18', name: 'Alwin Soy', loc: 'PROCESS' },
-                            { id: '20', name: 'Homogenizer', loc: 'PROCESS' },
-                            { id: '16', name: 'Container Conveyor (E10)', loc: 'PROCESS' },
-                            { id: '19', name: 'Process MCC', loc: 'PROCESS' },
-                            { id: '14', name: 'Bottle Washer (E8)', loc: 'PROCESS' },
-                            { id: '30', name: 'Ups', loc: 'BOTTLING' },
-                            { id: '26', name: 'Container Depalettiser (E4)', loc: 'BOTTLING' },
-                            { id: '29', name: 'Pack Conveyor (E12)', loc: 'BOTTLING' },
-                            { id: '22', name: 'Sugar Dissolving', loc: 'PROCESS' },
-                            { id: '32', name: 'Hydro Sterilizer', loc: 'BOTTLING' },
-                            { id: '31', name: 'Wrap Round', loc: 'BOTTLING' },
-                            { id: '15', name: 'Modular Labeller (E9)', loc: 'PROCESS' },
-                            { id: '33', name: 'Filler', loc: 'BOTTLING' },
-                            { id: '23', name: 'Container Dryer (E1)', loc: 'BOTTLING' },
-                            { id: '25', name: 'Unpacker (E3)', loc: 'BOTTLING' },
-                            { id: '13', name: 'CIP Line (E7)', loc: 'PROCESS' }, 
-                            { id: '17', name: 'Conveyor Lubrication (E11)', loc: 'PROCESS' },
-                            { id: '24', name: 'Packer (E2)', loc: 'BOTTLING' },
-                            { id: '27', name: 'Pack Washing (E5)', loc: 'BOTTLING' },
-                            { id: '28', name: 'Inspector (E6)', loc: 'BOTTLING' },
-                            { id: '41', name: 'Accumulation Table', loc: 'LVSG 5 LOADS' },             
-                            { id: '39', name: 'DP-WM', loc: 'LVSG 5 LOADS' },
-                            { id: '34', name: 'DPP', loc: 'LVSG 5 LOADS' },
-                            { id: '40', name: 'Sumppit Pump2', loc: 'LVSG 5 LOADS' },
-                            { id: '38', name: 'WWTP (220V)', loc: 'LVSG 5 LOADS' },
-                            { id: '35', name: 'DLP', loc: 'LVSG 5 LOADS' },
-                            { id: '36', name: 'WareHouse', loc: 'LVSG 5 LOADS' },
-                            { id: '37', name: 'RVAC (220V)', loc: 'LVSG 5 LOADS' }]; 
-    const fmt = (num) => (num || 0).toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 3 });
-    const getLocalDate = (d) => { const offset = d.getTimezoneOffset(); const localDate = new Date(d.getTime() - (offset * 60 * 1000)); return localDate.toISOString().split('T')[0]; };
+const MOCK_EQUIPMENT = [ 
+    { id: '1', name: 'Refrigeration System', loc: 'UTILITIES' },
+    { id: '4', name: 'Condensate Return System', loc: 'UTILITIES' },
+    { id: '2', name: 'Clean Steam Generator', loc: 'UTILITIES' }, 
+    { id: '3', name: 'Bulk Chemical System', loc: 'UTILITIES' },  
+    { id: '5', name: 'RVAC', loc: 'UTILITIES' },
+    { id: '9', name: 'Water Treatment Plant (WTP)', loc: 'UTILITIES' },
+    { id: '6', name: 'BOILER', loc: 'UTILITIES' }, 
+    { id: '7', name: 'Compressed Dry Air (CDA)', loc: 'UTILITIES' }, 
+    { id: '8', name: 'Waste Water Treatment Plant (WWTP)', loc: 'UTILITIES' }, 
+    { id: '21', name: 'Soya Bean Pre-treatment & Handling', loc: 'PROCESS' },
+    { id: '10', name: 'Combined Water Storage (CWS)', loc: 'UTILITIES' }, 
+    { id: '11', name: 'Sump Pit Pump 1', loc: 'UTILITIES' }, 
+    { id: '12', name: 'Freezer & Cold Storage', loc: 'UTILITIES' },
+    { id: '18', name: 'Alwin Soy', loc: 'PROCESS' },
+    { id: '20', name: 'Homogenizer', loc: 'PROCESS' },
+    { id: '16', name: 'Container Conveyor (E10)', loc: 'PROCESS' },
+    { id: '19', name: 'Process MCC', loc: 'PROCESS' },
+    { id: '14', name: 'Bottle Washer (E8)', loc: 'PROCESS' },
+    { id: '30', name: 'Ups', loc: 'BOTTLING' },
+    { id: '26', name: 'Container Depalettiser (E4)', loc: 'BOTTLING' },
+    { id: '29', name: 'Pack Conveyor (E12)', loc: 'BOTTLING' },
+    { id: '22', name: 'Sugar Dissolving', loc: 'PROCESS' },
+    { id: '32', name: 'Hydro Sterilizer', loc: 'BOTTLING' },
+    { id: '31', name: 'Wrap Round', loc: 'BOTTLING' },
+    { id: '15', name: 'Modular Labeller (E9)', loc: 'PROCESS' },
+    { id: '33', name: 'Filler', loc: 'BOTTLING' },
+    { id: '23', name: 'Container Dryer (E1)', loc: 'BOTTLING' },
+    { id: '25', name: 'Unpacker (E3)', loc: 'BOTTLING' },
+    { id: '13', name: 'CIP Line (E7)', loc: 'PROCESS' }, 
+    { id: '17', name: 'Conveyor Lubrication (E11)', loc: 'PROCESS' },
+    { id: '24', name: 'Packer (E2)', loc: 'BOTTLING' },
+    { id: '27', name: 'Pack Washing (E5)', loc: 'BOTTLING' },
+    { id: '28', name: 'Inspector (E6)', loc: 'BOTTLING' },
+    { id: '41', name: 'Accumulation Table', loc: 'LVSG 5 LOADS' },               
+    { id: '39', name: 'DP-WM', loc: 'LVSG 5 LOADS' },
+    { id: '34', name: 'DPP', loc: 'LVSG 5 LOADS' },
+    { id: '40', name: 'Sumppit Pump2', loc: 'LVSG 5 LOADS' },
+    { id: '38', name: 'WWTP (220V)', loc: 'LVSG 5 LOADS' },
+    { id: '35', name: 'DLP', loc: 'LVSG 5 LOADS' },
+    { id: '36', name: 'WareHouse', loc: 'LVSG 5 LOADS' },
+    { id: '37', name: 'RVAC (220V)', loc: 'LVSG 5 LOADS' }
+]; 
 
-    let pressTimer;
-    let isLongPress = false;
+const getLocalDate = (d) => { const offset = d.getTimezoneOffset(); const localDate = new Date(d.getTime() - (offset * 60 * 1000)); return localDate.toISOString().split('T')[0]; };
 
-    // Desktop Keyboard Support
-    document.addEventListener('keydown', (e) => {
-        if(app.state.view !== 'reading') return;
-        const key = e.key;
-        if(/[0-9]/.test(key)) { handleKey(key); animateKey(key); }
-        else if(key === '.') { handleKey('.'); animateKey('.'); }
-        else if(key === 'Backspace') { handleKey('⌫'); animateKey('⌫'); }
-        else if(key === 'Enter') { window.enterNext(); }
+let pressTimer;
+let isLongPress = false;
+
+document.addEventListener('keydown', (e) => {
+    if(app.state.view !== 'reading') return;
+    const key = e.key;
+    if(/[0-9]/.test(key)) { handleKey(key); animateKey(key); }
+    else if(key === '.') { handleKey('.'); animateKey('.'); }
+    else if(key === 'Backspace') { handleKey('⌫'); animateKey('⌫'); }
+    else if(key === 'Enter') { window.enterNext(); }
+});
+
+function animateKey(k) {
+    const btn = Array.from(document.querySelectorAll('.num-btn')).find(b => b.innerText === k);
+    if(btn) { btn.classList.add('active-key'); setTimeout(() => btn.classList.remove('active-key'), 100); }
+}
+
+class PowerCon {
+  constructor() {
+    this.state = { view: 'home', currentIndex: 0, date: getLocalDate(new Date()), filterDate: getLocalDate(new Date()), sessionReadings: [], cloudReadings: {}, yesterdayReadings: {}, loading: false, isSingleEdit: false, isEditingFromReview: false};
+    this.init();
+  }
+  async init() { loadSavedTheme(); this.render(); await this.syncWithCloud(); }
+  
+  async syncWithCloud(targetDate = null) {
+    this.state.loading = true; this.render();
+    const dateToQuery = targetDate || this.state.date;
+    try {
+      const snapshot = await db.ref('readings/' + dateToQuery).once('value');
+      this.state.cloudReadings = snapshot.val() || {};
+      const d = new Date(dateToQuery); d.setDate(d.getDate() - 1);
+      const yKey = getLocalDate(d);
+      const ySnap = await db.ref('readings/' + yKey).once('value');
+      this.state.yesterdayReadings = ySnap.val() || {};
+      MOCK_EQUIPMENT.forEach((eq, i) => { if(this.state.cloudReadings[eq.id]) this.state.sessionReadings[i] = this.state.cloudReadings[eq.id]; });
+    } catch(e) { console.error(e); }
+    this.state.loading = false; this.render();
+  }
+
+  render() { document.getElementById('app').innerHTML = this[`${this.state.view}HTML`](); }
+
+  homeHTML() {
+    return `<div class="p-8 max-w-sm mx-auto flex flex-col justify-center min-h-screen text-center">
+        <h1 class="text-6xl font-black italic tracking-tighter mb-2">POWER<span class="text-emerald-500">CON</span></h1>
+        <p class="text-[9px] font-bold uppercase tracking-[0.3em] mb-12 opacity-40">Nutriveb Corporation</p>
+        <div class="glass-card rounded-[2.5rem] p-6 mb-4 border border-white/20 shadow-xl">
+            <label class="text-[9px] font-black uppercase mb-3 block tracking-widest opacity-60">Reading Date</label>
+            <input type="date" value="${this.state.date}" class="w-full bg-transparent border-2 border-emerald-500/20 p-4 rounded-2xl font-bold text-center outline-none" onchange="app.state.date=this.value; app.syncWithCloud()">
+        </div>
+        <button onclick="app.start()" class="w-full bg-emerald-600 text-white font-black py-6 rounded-[2rem] shadow-xl text-xl mb-3 active:scale-95 transition-all">START READING</button>
+        <button onclick="app.state.view='records';app.state.filterDate=app.state.date;app.syncWithCloud(app.state.date)" class="w-full bg-slate-900 text-white font-bold py-5 rounded-[2rem] text-xs uppercase tracking-widest active:scale-95 transition-all mb-8">VIEW LOGSHEETS</button>
+        <button onclick="toggleSettings()" class="text-[9px] font-black uppercase tracking-widest opacity-40 py-2 px-6 border border-current rounded-full mx-auto mb-4">UI Settings</button>
+        <p class="text-[8px] font-bold opacity-30 uppercase tracking-widest">© ${new Date().getFullYear()} Nutriveb Corporation</p>
+    </div>`;
+  }
+
+  readingHTML() {
+    const eq = MOCK_EQUIPMENT[this.state.currentIndex];
+    const progress = ((this.state.currentIndex + 1) / MOCK_EQUIPMENT.length) * 100;
+    // Panatilihin ang string format para hindi mawala ang decimal zeros
+    let autoPrev = (this.state.yesterdayReadings && this.state.yesterdayReadings[eq.id]) ? this.state.yesterdayReadings[eq.id].curr : '0.000';
+    
+    return `<div class="p-4 max-w-xl mx-auto min-h-screen flex flex-col">
+      <div class="w-full h-1.5 bg-emerald-900/10 rounded-full mb-4 overflow-hidden"><div class="h-full bg-emerald-500 transition-all" style="width:${progress}%"></div></div>
+      <div class="flex justify-between items-center mb-1"><span class="text-[9px] font-black bg-emerald-600 text-white px-3 py-1 rounded-lg uppercase">${eq.loc}</span><span class="text-xs font-bold font-mono-numbers opacity-50">${this.state.currentIndex+1}/${MOCK_EQUIPMENT.length}</span></div>
+      <h2 class="text-xl font-black mb-4 truncate">${eq.name}</h2>
+      <div class="space-y-2 mb-4">
+        <div class="glass-card p-3 rounded-xl flex justify-between items-center"><span class="text-[9px] font-black uppercase opacity-50">Prev Reading</span><input type="text" id="p" value="${autoPrev}" class="bg-transparent text-right font-bold outline-none w-1/2" ${this.state.isSingleEdit ? '' : 'readonly'}></div>
+        <div class="glass-card p-5 rounded-[1.5rem] border-2 border-emerald-500 shadow-xl"><label class="text-[8px] font-black uppercase block text-center mb-1 opacity-60">Current Input</label><input type="text" id="c" class="w-full bg-transparent text-4xl font-black text-center text-emerald-600 outline-none" placeholder="0.000" readonly></div>
+      </div>
+      <div class="grid grid-cols-3 gap-2 mb-4">
+        ${['1','2','3','4','5','6','7','8','9','.', '0', '⌫'].map(k => {
+            if(k === '0') {
+                return `<button class="num-btn" onmousedown="startPress()" onmouseup="endPress('0')" ontouchstart="startPress(); event.preventDefault();" ontouchend="endPress('0'); event.preventDefault();">${k}</button>`;
+            }
+            return `<button class="num-btn" onclick="handleKey('${k}')">${k}</button>`;
+        }).join('')}
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <button onclick="app.exitReading()" class="py-4 font-bold uppercase text-[10px] opacity-50">Cancel</button>
+        <button onclick="window.enterNext()" class="bg-emerald-600 text-white font-black py-4 rounded-2xl shadow-lg uppercase italic text-sm">
+            ${this.state.isEditingFromReview || this.state.isSingleEdit ? 'UPDATE READING ✓' : 'Submit & Next ➔'}
+        </button>
+      </div>
+    </div>`;
+  }
+
+  recordsHTML() {
+    let grandTotal = 0;
+    MOCK_EQUIPMENT.forEach(eq => {
+      const r = this.state.cloudReadings[eq.id];
+      if (r && r.usage) grandTotal += parseFloat(r.usage);
     });
 
-    function animateKey(k) {
-        const btn = Array.from(document.querySelectorAll('.num-btn')).find(b => b.innerText === k);
-        if(btn) { btn.classList.add('active-key'); setTimeout(() => btn.classList.remove('active-key'), 100); }
-    }
+    const meta = this.state.cloudReadings['metadata'] || {};
+    const defaultColors = { "UTILITIES": "#ef4444", "PROCESS": "#3b82f6", "BOTTLING": "#f59e0b", "LVSG 5 LOADS": "#10b981" };
+    const colors = this.state.userColors || defaultColors;
 
-    class PowerCon {
-      constructor() {
-        this.state = { view: 'home', currentIndex: 0, date: getLocalDate(new Date()), filterDate: getLocalDate(new Date()), sessionReadings: [], cloudReadings: {}, yesterdayReadings: {}, loading: false, isSingleEdit: false, isEditingFromReview: false};
-        this.init();
-      }
-      async init() { loadSavedTheme(); this.render(); await this.syncWithCloud(); }
-      async syncWithCloud(targetDate = null) {
-        this.state.loading = true; this.render();
-        const dateToQuery = targetDate || this.state.date;
-        try {
-          const snapshot = await db.ref('readings/' + dateToQuery).once('value');
-          this.state.cloudReadings = snapshot.val() || {};
-          const d = new Date(dateToQuery); d.setDate(d.getDate() - 1);
-          const yKey = getLocalDate(d);
-          const ySnap = await db.ref('readings/' + yKey).once('value');
-          this.state.yesterdayReadings = ySnap.val() || {};
-          MOCK_EQUIPMENT.forEach((eq, i) => { if(this.state.cloudReadings[eq.id]) this.state.sessionReadings[i] = this.state.cloudReadings[eq.id]; });
-        } catch(e) { console.error(e); }
-        this.state.loading = false; this.render();
-      }
-      render() { document.getElementById('app').innerHTML = this[`${this.state.view}HTML`](); }
+    const customOrder = ["Refrigeration System", "Clean Steam Generator", "Bulk Chemical System", "Condensate Return System", "RVAC", "BOILER", "Compressed Dry Air (CDA)", "Waste Water Treatment Plant (WWTP)", "Water Treatment Plant (WTP)", "Combined Water Storage (CWS)", "Sump Pit Pump 1", "Freezer & Cold Storage", "CIP Line (E7)", "Bottle Washer (E8)", "Modular Labeller (E9)", "Container Conveyor (E10)", "Conveyor Lubrication (E11)", "Alwin Soy", "Process MCC", "Homogenizer", "Soya Bean Pre-treatment & Handling", "Sugar Dissolving", "Container Dryer (E1)", "Packer (E2)", "Unpacker (E3)", "Container Depalettiser (E4)", "Pack Washing (E5)", "Inspector (E6)", "Pack Conveyor (E12)", "Ups", "Wrap Round", "Hydro Sterilizer", "Filler", "DPP", "DLP", "Warehouse", "RVAC (220V)", "WWTP (220V)", "DP-WM", "Sumppit Pump2", "Accumulation Table"];
 
-      homeHTML() {
-        return `<div class="p-8 max-w-sm mx-auto flex flex-col justify-center min-h-screen text-center">
-            <h1 class="text-6xl font-black italic tracking-tighter mb-2">POWER<span class="text-emerald-500">CON</span></h1>
-            <p class="text-[9px] font-bold uppercase tracking-[0.3em] mb-12 opacity-40">Nutriveb Corporation</p>
-            <div class="glass-card rounded-[2.5rem] p-6 mb-4 border border-white/20 shadow-xl">
-                <label class="text-[9px] font-black uppercase mb-3 block tracking-widest opacity-60">Reading Date</label>
-                <input type="date" value="${this.state.date}" class="w-full bg-transparent border-2 border-emerald-500/20 p-4 rounded-2xl font-bold text-center outline-none" onchange="app.state.date=this.value; app.syncWithCloud()">
-            </div>
-            <button onclick="app.start()" class="w-full bg-emerald-600 text-white font-black py-6 rounded-[2rem] shadow-xl text-xl mb-3 active:scale-95 transition-all">START READING</button>
-            <button onclick="app.state.view='records';app.state.filterDate=app.state.date;app.syncWithCloud(app.state.date)" class="w-full bg-slate-900 text-white font-bold py-5 rounded-[2rem] text-xs uppercase tracking-widest active:scale-95 transition-all mb-8">VIEW LOGSHEETS</button>
-            <button onclick="toggleSettings()" class="text-[9px] font-black uppercase tracking-widest opacity-40 py-2 px-6 border border-current rounded-full mx-auto mb-4">UI Settings</button>
-            <p class="text-[8px] font-bold opacity-30 uppercase tracking-widest">© ${new Date().getFullYear()} Nutriveb Corporation | Built for Utility Monitoring</p>
-        </div>`;
-      }
-
-      readingHTML() {
-        const eq = MOCK_EQUIPMENT[this.state.currentIndex];
-        const progress = ((this.state.currentIndex + 1) / MOCK_EQUIPMENT.length) * 100;
-        let autoPrev = (this.state.yesterdayReadings && this.state.yesterdayReadings[eq.id]) ? this.state.yesterdayReadings[eq.id].curr : '0.000';
-        return `<div class="p-4 max-w-xl mx-auto min-h-screen flex flex-col">
-          <div class="w-full h-1.5 bg-emerald-900/10 rounded-full mb-4 overflow-hidden"><div class="h-full bg-emerald-500 transition-all" style="width:${progress}%"></div></div>
-          <div class="flex justify-between items-center mb-1"><span class="text-[9px] font-black bg-emerald-600 text-white px-3 py-1 rounded-lg uppercase">${eq.loc}</span><span class="text-xs font-bold font-mono-numbers opacity-50">${this.state.currentIndex+1}/${MOCK_EQUIPMENT.length}</span></div>
-          <h2 class="text-xl font-black mb-4 truncate">${eq.name}</h2>
-          <div class="space-y-2 mb-4">
-            <div class="glass-card p-3 rounded-xl flex justify-between items-center"><span class="text-[9px] font-black uppercase opacity-50">Prev Reading</span><input type="text" id="p" value="${autoPrev}" class="bg-transparent text-right font-bold outline-none w-1/2" ${this.state.isSingleEdit ? '' : 'readonly'}></div>
-            <div class="glass-card p-5 rounded-[1.5rem] border-2 border-emerald-500 shadow-xl"><label class="text-[8px] font-black uppercase block text-center mb-1 opacity-60">Current Input</label><input type="text" id="c" class="w-full bg-transparent text-4xl font-black text-center text-emerald-600 outline-none" placeholder="0.000" readonly></div>
-          </div>
-          <div class="grid grid-cols-3 gap-2 mb-4">
-            ${['1','2','3','4','5','6','7','8','9','.', '0', '⌫'].map(k => {
-                if(k === '0') {
-                    return `<button class="num-btn" 
-                        onmousedown="startPress()" 
-                        onmouseup="endPress('0')" 
-                        ontouchstart="startPress(); event.preventDefault();" 
-                        ontouchend="endPress('0'); event.preventDefault();">${k}</button>`;
-                }
-                return `<button class="num-btn" onclick="handleKey('${k}')">${k}</button>`;
-            }).join('')}
-          </div>
-          <div class="grid grid-cols-2 gap-3">
-            <button onclick="app.exitReading()" class="py-4 font-bold uppercase text-[10px] opacity-50">Cancel</button>
-            <button onclick="window.enterNext()" class="bg-emerald-600 text-white font-black py-4 rounded-2xl shadow-lg uppercase italic text-sm">
-    ${this.state.isEditingFromReview || this.state.isSingleEdit ? 'UPDATE READING ✓' : 'Submit & Next ➔'}
-</button>
-          </div>
-        </div>`;
-      }
-recordsHTML() {
-  let grandTotal = 0;
-
-  // Calculate grand total from cloud readings
-  MOCK_EQUIPMENT.forEach(eq => {
-    const r = this.state.cloudReadings[eq.id];
-    if (r && r.usage) grandTotal += parseFloat(r.usage);
-  });
-
-  const meta = this.state.cloudReadings['metadata'] || {};
-
-  // Default category colors
-  const defaultColors = {
-    "UTILITIES": "#ef4444",
-    "PROCESS": "#3b82f6",
-    "BOTTLING": "#f59e0b",
-    "LVSG 5 LOADS": "#10b981"
-  };
-
-  const colors = this.state.userColors || defaultColors;
-
-  const getContrast = (hex) => {
-    if (!hex) return "#fff";
-    hex = hex.replace('#','');
-    const r = parseInt(hex.substr(0,2),16);
-    const g = parseInt(hex.substr(2,2),16);
-    const b = parseInt(hex.substr(4,2),16);
-    const yiq = ((r*299)+(g*587)+(b*114))/1000;
-    return yiq >= 128 ? "#000000" : "#ffffff";
-  };
-
-  const customOrder = [
-    "Refrigeration System",
-    "Clean Steam Generator",
-    "Bulk Chemical System",
-    "Condensate Return System",
-    "RVAC",
-    "BOILER",
-    "Compressed Dry Air (CDA)",
-    "Waste Water Treatment Plant (WWTP)",
-    "Water Treatment Plant (WTP)",
-    "Combined Water Storage (CWS)",
-    "Sump Pit Pump 1",
-    "Freezer & Cold Storage",
-    "CIP Line (E7)",
-    "Bottle Washer (E8)",
-    "Modular Labeller (E9)",
-    "Container Conveyor (E10)",
-    "Conveyor Lubrication (E11)",
-    "Alwin Soy",
-    "Process MCC",
-    "Homogenizer",
-    "Soya Bean Pre-treatment & Handling",
-    "Sugar Dissolving",
-    "Container Dryer (E1)",
-    "Packer (E2)",
-    "Unpacker (E3)",
-    "Container Depalettiser (E4)",
-    "Pack Washing (E5)",
-    "Inspector (E6)",
-    "Pack Conveyor (E12)",
-    "Ups",
-    "Wrap Round",
-    "Hydro Sterilizer",
-    "Filler",
-    "DPP",
-    "DLP",
-    "Warehouse",
-    "RVAC (220V)",
-    "WWTP (220V)",
-    "DP-WM",
-    "Sumppit Pump2",
-    "Accumulation Table"
-  ];
-
-  return `<div class="p-4 max-w-xl mx-auto min-h-screen pb-40">
-
-    <!-- Top controls -->
-    <div class="flex justify-between items-center mb-6 pt-4">
-      <button onclick="app.state.view='home';app.render()" class="font-black text-[10px] tracking-widest px-4 py-2 bg-white/10 rounded-xl border border-white/20">← BACK</button>
-      <input type="date" value="${this.state.filterDate}" onchange="app.state.filterDate=this.value; app.syncWithCloud(this.value)" class="bg-white/10 px-4 py-2 rounded-xl font-bold text-xs border border-white/20 text-emerald-500 outline-none">
-    </div>
-
-    <!-- Daily consumption summary -->
-    <div class="glass-card p-8 rounded-[2rem] shadow-2xl mb-8 border-b-8 border-emerald-500 text-center">
-      <h3 class="text-[9px] font-black uppercase tracking-widest mb-2 opacity-60">Daily Consumption</h3>
-      <div class="text-4xl font-black font-mono-numbers mb-2">${grandTotal} <span class="text-[10px] font-sans">kWh</span></div>
-      <div class="flex justify-center items-center gap-2 mt-2">
-        <div class="h-[1px] w-4 bg-emerald-500/30"></div>
-        <p class="text-[9px] font-black uppercase text-emerald-500">OPERATOR: ${meta.operator || 'UNSPECIFIED'}</p>
-        <div class="h-[1px] w-4 bg-emerald-500/30"></div>
-      </div>
-    </div>
-
-    <!-- Equipment list -->
-    <div class="space-y-4">
-      ${customOrder.map(name => {
-        const e = MOCK_EQUIPMENT.find(eq => eq.name.toLowerCase() === name.toLowerCase());
-        if (!e) return '';
-
-        const r = this.state.cloudReadings[e.id] || { prev: 0, curr: 0, usage: 0 };
-        const catColor = colors[e.loc] || defaultColors[e.loc] || "#3b82f6";
-        const currBg = `${catColor}33`;
-        const currText = getContrast(catColor);
-
-        return `<div class="glass-card p-4 rounded-2xl flex items-center justify-between" onclick="app.editFromDashboard('${e.id}')">
-          <div class="flex-1">
-            <p class="text-[10px] font-white uppercase mb-1">${e.name}</p>
-            <div class="text-[9px] font-mono-numbers text-white space-y-0.5">
-              <div>
-                <span class="opacity-50">Previous:</span>
-                <span class="opacity-70">${r.prev != null ? r.prev : ''}</span>
+    return `<div class="p-4 max-w-xl mx-auto min-h-screen pb-40">
+        <div class="flex justify-between items-center mb-6 pt-4">
+          <button onclick="app.state.view='home';app.render()" class="font-black text-[10px] tracking-widest px-4 py-2 bg-white/10 rounded-xl border border-white/20">← BACK</button>
+          <input type="date" value="${this.state.filterDate}" onchange="app.state.filterDate=this.value; app.syncWithCloud(this.value)" class="bg-white/10 px-4 py-2 rounded-xl font-bold text-xs border border-white/20 text-emerald-500 outline-none">
+        </div>
+        <div class="glass-card p-8 rounded-[2rem] shadow-2xl mb-8 border-b-8 border-emerald-500 text-center">
+          <h3 class="text-[9px] font-black uppercase tracking-widest mb-2 opacity-60">Daily Consumption</h3>
+          <div class="text-4xl font-black font-mono-numbers mb-2">${grandTotal.toFixed(3)} <span class="text-[10px] font-sans">kWh</span></div>
+          <p class="text-[9px] font-black uppercase text-emerald-500">OPERATOR: ${meta.operator || 'UNSPECIFIED'}</p>
+        </div>
+        <div class="space-y-4">
+          ${customOrder.map(name => {
+            const e = MOCK_EQUIPMENT.find(eq => eq.name.toLowerCase() === name.toLowerCase());
+            if (!e) return '';
+            const r = this.state.cloudReadings[e.id] || { prev: '0', curr: '0', usage: '0' };
+            const catColor = colors[e.loc] || defaultColors[e.loc] || "#3b82f6";
+            return `<div class="glass-card p-4 rounded-2xl flex items-center justify-between" onclick="app.editFromDashboard('${e.id}')">
+              <div class="flex-1">
+                <p class="text-[10px] font-white uppercase mb-1">${e.name}</p>
+                <div class="text-[9px] font-mono-numbers text-white space-y-0.5">
+                  <div><span class="opacity-50">Prev:</span> <span class="opacity-70">${r.prev}</span></div>
+                  <div><span class="font-semibold" style="color:${catColor}">Curr:</span> <span class="font-bold text-[14px] ml-1">${r.curr}</span></div>
+                </div>
               </div>
-              <div>
-                <span class="font-semibold" style="color:${catColor}">Current:</span>
-                <input type="text" value="${r.curr != null ? r.curr : ''}"
-                  class="px-1.5 py-0.5 rounded font-bold text-[14px] w-24 text-center"
-                  style="background-color:${currBg}; color:${currText}"
-                  ${this.state.isAdmin ? `onchange="app.saveReading(this.value, '${e.id}')"` : 'readonly'}>
-              </div>
-            </div>
-          </div>
-          <div class="text-right">
-            <p class="text-[16px] font-mono-numbers font-white text-emerald-600">${r.usage != null ? r.usage : ''}</p>
-          </div>
-        </div>`;
-      }).join('')}
-    </div>
+              <div class="text-right"><p class="text-[16px] font-mono-numbers font-white text-emerald-600">${r.usage}</p></div>
+            </div>`;
+          }).join('')}
+        </div>
+        <div class="fixed bottom-0 left-0 w-full p-4 bg-transparent backdrop-blur-md flex gap-3">
+          <button onclick="app.exportToExcel()" class="flex-1 bg-slate-900 text-white py-4 rounded-xl font-black text-[10px] uppercase">Download CSV</button>
+          <button onclick="window.open('logsheet.html?date=' + app.state.filterDate, '_blank')" class="flex-1 bg-emerald-600 text-white py-4 rounded-xl font-black text-[10px] uppercase">Print Log</button>
+        </div>
+    </div>`;
+  }
 
-    <!-- Bottom controls -->
-    <div class="fixed bottom-0 left-0 w-full p-4 bg-transparent backdrop-blur-md flex gap-3">
-      <button onclick="app.exportToExcel()" class="flex-1 bg-slate-900 text-white py-4 rounded-xl font-black text-[10px] uppercase">Download Excel</button>
-      <button onclick="window.open('logsheet.html?date=' + app.state.filterDate, '_blank')" class="flex-1 bg-emerald-600 text-white py-4 rounded-xl font-black text-[10px] uppercase">Print Log</button>
-    </div>
-
-  </div>`;
-}
-      async start() { await this.syncWithCloud(); this.state.isSingleEdit = false; let firstEmpty = 0; for(let i=0; i<MOCK_EQUIPMENT.length; i++) { if(!this.state.cloudReadings[MOCK_EQUIPMENT[i].id]) { firstEmpty = i; break; } } this.state.currentIndex = firstEmpty; this.state.view = 'reading'; this.render(); }
-      exitReading() { 
-    if (this.state.isEditingFromReview) {
-        this.state.isEditingFromReview = false;
-        this.state.view = 'review';
-    } else {
-        this.state.view = this.state.isSingleEdit ? 'records' : 'home'; 
-    }
-    this.state.isSingleEdit = false; 
-    this.render(); 
-}
-    async saveReading(curr, prevInput) {
+  async saveReading(currInput, prevInput) {
     const eq = MOCK_EQUIPMENT[this.state.currentIndex];
-    const current = parseFloat(curr || 0);   
-    const prev = parseFloat(prevInput || 0); 
-    const usage = current - prev;             
     
-    if (current < prev && !confirm("⚠️ Current lower than previous. Save anyway?")) return;
+    // Panatilihin bilang string para hindi mawala ang decimal places
+    const currentStr = currInput || "0";
+    const prevStr = prevInput || "0";
     
-    const data = { id: eq.id, name: eq.name, loc: eq.loc, curr: current, prev: prev, usage: usage };
+    const currentNum = parseFloat(currentStr);
+    const prevNum = parseFloat(prevStr);
+    const usage = (currentNum - prevNum).toFixed(3);
+    
+    if (currentNum < prevNum && !confirm("⚠️ Current lower than previous. Save anyway?")) return;
+    
+    const data = { id: eq.id, name: eq.name, loc: eq.loc, curr: currentStr, prev: prevStr, usage: usage };
     this.state.sessionReadings[this.state.currentIndex] = data;
 
-    // CHECK KUNG SAAN PUPUNTA PAGKAPINDOT NG NEXT/SUBMIT
     if (this.state.isSingleEdit) {
-        // Galing sa Main Dashboard (Admin edit)
         await db.ref(`readings/${this.state.filterDate}/${eq.id}`).set(data);
-        this.state.isSingleEdit = false; 
-        this.state.view = 'records'; 
+        this.state.isSingleEdit = false; this.state.view = 'records'; 
         await this.syncWithCloud(this.state.filterDate);
-    } 
-    else if (this.state.isEditingFromReview) {
-        // FIX: Pag galing sa Review, balik lang sa Review list
-        this.state.isEditingFromReview = false; // Reset flag
-        this.state.view = 'review'; 
-        this.render();
-    } 
-    else {
-        // Normal sequence (Next, Next, Next...)
+    } else if (this.state.isEditingFromReview) {
+        this.state.isEditingFromReview = false; this.state.view = 'review'; this.render();
+    } else {
         if (this.state.currentIndex < MOCK_EQUIPMENT.length - 1) { 
-            this.state.currentIndex++; 
-            this.render(); 
+            this.state.currentIndex++; this.render(); 
         } else { 
-            this.state.view = 'review'; 
-            this.render(); 
+            this.state.view = 'review'; this.render(); 
         }
     }
+  }
+
+  reviewHTML() {
+    return `<div class="p-6 max-w-xl mx-auto flex flex-col min-h-screen">
+      <h2 class="text-3xl font-black mb-6 italic pt-10">Review Log</h2>
+      <div class="glass-card rounded-[2rem] flex-1 mb-8 overflow-y-auto">
+          <table class="w-full">
+            ${this.state.sessionReadings.map((r, i) => r ? 
+            `<tr onclick="app.editFromReview(${i})" class="border-b border-white/5">
+                <td class="p-4 font-black uppercase text-[9px] opacity-70">${r.name}</td>
+                <td class="p-4 text-right font-mono-numbers font-black text-emerald-500">${r.curr}</td>
+            </tr>` : '').join('')}
+          </table>
+      </div>
+      <button onclick="app.openNameModal()" class="w-full bg-emerald-600 text-white font-black py-6 rounded-3xl shadow-xl text-lg uppercase italic mb-8">Finalize Submission ✓</button>
+    </div>`;
+  }
+
+  // --- REST OF THE METHODS (confirmFinalSave, editFromDashboard, etc.) ---
+  async confirmFinalSave() {
+    const opName = document.getElementById('opNameInput').value.trim().toUpperCase();
+    if(!opName) return alert("Enter Operator Name!");
+    let recent = JSON.parse(localStorage.getItem('recentOperators') || '[]'); 
+    recent = [opName, ...recent.filter(n => n !== opName)].slice(0, 5); 
+    localStorage.setItem('recentOperators', JSON.stringify(recent));
+    const updates = {}; 
+    this.state.sessionReadings.forEach(r => { if(r) updates[`/readings/${this.state.date}/${r.id}`] = r; });
+    updates[`/readings/${this.state.date}/metadata`] = { operator: opName, timestamp: Date.now() };
+    await db.ref().update(updates); 
+    document.getElementById('nameModal').classList.add('hidden');
+    this.state.view = 'records'; this.state.filterDate = this.state.date; 
+    await this.syncWithCloud(this.state.date);
+  }
+
+  openNameModal() {
+    const modal = document.getElementById('nameModal'); modal.classList.remove('hidden');
+    const recent = JSON.parse(localStorage.getItem('recentOperators') || '[]');
+    document.getElementById('recentNamesList').innerHTML = recent.map(name => `<button onclick="document.getElementById('opNameInput').value='${name}'; app.confirmFinalSave()" class="text-[9px] bg-emerald-500/10 text-current px-4 py-2 rounded-xl font-bold uppercase m-1 border border-emerald-500/20">${name}</button>`).join('');
+  }
+
+  async start() { await this.syncWithCloud(); this.state.isSingleEdit = false; let firstEmpty = 0; for(let i=0; i<MOCK_EQUIPMENT.length; i++) { if(!this.state.cloudReadings[MOCK_EQUIPMENT[i].id]) { firstEmpty = i; break; } } this.state.currentIndex = firstEmpty; this.state.view = 'reading'; this.render(); }
+  exitReading() { if (this.state.isEditingFromReview) { this.state.isEditingFromReview = false; this.state.view = 'review'; } else { this.state.view = this.state.isSingleEdit ? 'records' : 'home'; } this.state.isSingleEdit = false; this.render(); }
+  editFromReview(i) { this.state.currentIndex = i; this.state.isEditingFromReview = true; this.state.view = 'reading'; this.render(); }
+  editFromDashboard(id) { const pin = prompt("Admin PIN:"); if (pin === "abnpower") { const index = MOCK_EQUIPMENT.findIndex(e => e.id === id); if (index !== -1) { this.state.isSingleEdit = true; this.state.currentIndex = index; this.state.view = 'reading'; this.render(); } } }
+  exportToExcel() {
+    let csv = "ID,Equipment,Location,Previous,Current,Usage\n";
+    MOCK_EQUIPMENT.forEach(eq => { const r = this.state.cloudReadings[eq.id] || { prev: '0', curr: '0', usage: '0' }; csv += `${eq.id},"${eq.name}",${eq.loc},${r.prev},${r.curr},${r.usage}\n`; });
+    const blob = new Blob([csv], { type: 'text/csv' }); const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `Log_${this.state.filterDate}.csv`; link.click();
+  }
 }
 
-      reviewHTML() {
-        return `<div class="p-6 max-w-xl mx-auto flex flex-col min-h-screen">
-          <h2 class="text-3xl font-black mb-6 italic pt-10">Review Log</h2>
-          <div class="glass-card rounded-[2rem] flex-1 mb-8 overflow-y-auto">
-             <table class="w-full">${this.state.sessionReadings.map((r, i) => r ? `<tr onclick="app.editFromReview(${i})" class="border-b border-white/5"><td class="p-4 font-black uppercase text-[9px] opacity-70">${r.name}</td><td class="p-4 text-right font-mono-numbers font-black text-emerald-500">${fmt(r.curr)}</td></tr>` : '').join('')}</table>
-          </div>
-          <button onclick="app.openNameModal()" class="w-full bg-emerald-600 text-white font-black py-6 rounded-3xl shadow-xl text-lg uppercase italic mb-8">Finalize Submission ✓</button>
-        </div>`;
-      }
+// UTILS & WINDOW FUNCTIONS
+window.handleKey = (k) => { 
+    const c = document.getElementById('c'); 
+    if(!c) return;
+    if (k === '⌫') c.value = c.value.slice(0, -1); 
+    else if (k === '.') { if (!c.value.includes('.')) c.value += '.'; } 
+    else { 
+        // Optional: Nilimit ko lang sa 4 decimal places para hindi masyadong mahaba pero hindi ito mag-ruround off.
+        if (c.value.includes('.') && c.value.split('.')[1].length >= 4) return; 
+        c.value += k; 
+    } 
+};
 
-      openNameModal() {
-          const modal = document.getElementById('nameModal'); modal.classList.remove('hidden');
-          const recent = JSON.parse(localStorage.getItem('recentOperators') || '[]');
-          document.getElementById('recentNamesList').innerHTML = recent.map(name => `<button onclick="document.getElementById('opNameInput').value='${name}'; app.confirmFinalSave()" class="text-[9px] bg-emerald-500/10 text-current px-4 py-2 rounded-xl font-bold uppercase m-1 border border-emerald-500/20">${name}</button>`).join('');
-      }
+window.enterNext = () => { 
+    const c = document.getElementById('c'); 
+    const p = document.getElementById('p'); 
+    if(!c || (c.value === "" && !app.state.isSingleEdit)) return; 
+    app.saveReading(c.value, p.value); 
+};
 
-      async confirmFinalSave() {
-        const opName = document.getElementById('opNameInput').value.trim().toUpperCase();
-        if(!opName) return alert("Enter Operator Name!");
-        let recent = JSON.parse(localStorage.getItem('recentOperators') || '[]'); recent = [opName, ...recent.filter(n => n !== opName)].slice(0, 5); localStorage.setItem('recentOperators', JSON.stringify(recent));
-        const updates = {}; this.state.sessionReadings.forEach(r => { if(r) updates[`/readings/${this.state.date}/${r.id}`] = r; });
-        updates[`/readings/${this.state.date}/metadata`] = { operator: opName, timestamp: Date.now() };
-        await db.ref().update(updates); document.getElementById('nameModal').classList.add('hidden');
-        this.state.view = 'records'; this.state.filterDate = this.state.date; await this.syncWithCloud(this.state.date);
-      }
+window.toggleSettings = () => document.getElementById('settingsModal').classList.toggle('hidden');
+window.updateOpacity = (v) => { document.documentElement.style.setProperty('--glass-opacity', v); localStorage.setItem('p_op', v); };
+window.setBg = (s, mode) => { const b = document.getElementById('bodyBg'); b.style.backgroundImage = s.includes('gradient') || s.includes('url') ? s : 'none'; b.style.backgroundColor = s.includes('gradient') || s.includes('url') ? 'transparent' : s; document.body.className = `h-full ${mode}-mode`; localStorage.setItem('p_bg', s); localStorage.setItem('p_mode', mode); };
+window.handleImageUpload = (e) => { const r = new FileReader(); r.onload = (ev) => setBg(`url(${ev.target.result})`, 'dark'); r.readAsDataURL(e.target.files[0]); };
+function loadSavedTheme() { const t = localStorage.getItem('p_bg'); const m = localStorage.getItem('p_mode') || 'dark'; const o = localStorage.getItem('p_op') || 0.8; updateOpacity(o); if (t) setBg(t, m); else setBg("url('assets/bg.jpg')", 'dark'); }
+window.startPress = () => { isLongPress = false; pressTimer = setTimeout(() => { isLongPress = true; const display = document.getElementById('c'); if(display) display.value = ""; if(navigator.vibrate) navigator.vibrate(50); }, 600); };
+window.endPress = (k) => { clearTimeout(pressTimer); if(!isLongPress) { handleKey(k); } };
 
-      editFromReview(i) { this.state.currentIndex = i; this.state.isEditingFromReview = true; this.state.view = 'reading'; this.render(); }
-      editFromDashboard(id) { const pin = prompt("Admin PIN:"); if (pin === "abnpower") { const index = MOCK_EQUIPMENT.findIndex(e => e.id === id); if (index !== -1) { this.state.isSingleEdit = true; this.state.currentIndex = index; this.state.view = 'reading'; this.render(); } } }
-      exportToExcel() {
-        let csv = "ID,Equipment,Location,Previous,Current,Usage\n";
-        MOCK_EQUIPMENT.forEach(eq => { const r = this.state.cloudReadings[eq.id] || { prev: 0, curr: 0, usage: 0 }; csv += `${eq.id},"${eq.name}",${eq.loc},${r.prev},${r.curr},${r.usage}\n`; });
-        const blob = new Blob([csv], { type: 'text/csv' }); const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `Log_${this.state.filterDate}.csv`; link.click();
-      }
-    }
-
-    // UTILS
-    window.toggleSettings = () => document.getElementById('settingsModal').classList.toggle('hidden');
-    window.updateOpacity = (v) => { document.documentElement.style.setProperty('--glass-opacity', v); localStorage.setItem('p_op', v); };
-    
-    window.setBg = (s, mode) => { 
-      const b = document.getElementById('bodyBg'); 
-      b.style.backgroundImage = s.includes('gradient') || s.includes('url') ? s : 'none';
-      b.style.backgroundColor = s.includes('gradient') || s.includes('url') ? 'transparent' : s;
-      document.body.className = `h-full ${mode}-mode`;
-      localStorage.setItem('p_bg', s); localStorage.setItem('p_mode', mode); 
-    };
-
-    window.handleImageUpload = (e) => { 
-        const r = new FileReader(); 
-        r.onload = (ev) => setBg(`url(${ev.target.result})`, 'dark'); 
-        r.readAsDataURL(e.target.files[0]); 
-    };
-
-    function loadSavedTheme() { 
-        const t = localStorage.getItem('p_bg'); 
-        const m = localStorage.getItem('p_mode') || 'dark'; 
-        const o = localStorage.getItem('p_op') || 0.8; 
-        const defaultBg = "url('assets/bg.jpg')"; 
-        updateOpacity(o);
-        if (t && t.includes('url')) {
-            const img = new Image();
-            img.onload = () => setBg(t, m);
-            img.onerror = () => setBg(defaultBg, 'dark');
-            img.src = t.replace(/url\(['"]?(.*?)['"]?\)/, '$1');
-        } else if (t) { setBg(t, m); } else { setBg(defaultBg, 'dark'); }
-    }
-
-    window.handleKey = (k) => { 
-        const c = document.getElementById('c'); 
-        if(!c) return;
-        if (k === '⌫') c.value = c.value.slice(0, -1); 
-        else if (k === '.') { if (!c.value.includes('.')) c.value += '.'; } 
-        else { if (c.value.includes('.') && c.value.split('.')[1].length >= 3) return; c.value += k; } 
-    };
-
-    window.enterNext = () => { 
-        const c = document.getElementById('c'); 
-        const p = document.getElementById('p'); 
-        if(!c || (c.value === "" && !app.state.isSingleEdit)) return; 
-        app.saveReading(c.value, p.value); 
-    };
-
-    window.startPress = () => { 
-        isLongPress = false; 
-        pressTimer = setTimeout(() => { 
-            isLongPress = true; 
-            const display = document.getElementById('c');
-            if(display) display.value = "";
-            if(navigator.vibrate) navigator.vibrate(50);
-        }, 600); 
-    };
-
-    window.endPress = (k) => { 
-        clearTimeout(pressTimer); 
-        if(!isLongPress) { handleKey(k); }
-    };
-
-    const app = new PowerCon();
-  </script>
-
-  <div id="nameModal" class="modal hidden">
-    <div class="modal-content rounded-[2.5rem] p-8 w-full max-w-sm text-center shadow-2xl">
-        <h3 class="text-xl font-black uppercase italic mb-2 text-emerald-500">Identity Login</h3>
-        <p class="text-[9px] opacity-50 mb-6 uppercase tracking-widest">Identify operator to sync logs</p>
-        <div id="recentNamesList" class="mb-6 flex flex-wrap justify-center"></div>
-        <input type="text" id="opNameInput" class="w-full bg-emerald-500/5 p-5 rounded-2xl text-center font-black outline-none mb-6 uppercase border-2 border-emerald-500/20 focus:border-emerald-500 transition-all" placeholder="OPERATOR NAME...">
-        <button onclick="app.confirmFinalSave()" class="w-full bg-emerald-600 text-white py-5 rounded-2xl font-black uppercase italic shadow-lg active:scale-95 transition-all">Submit & Sync</button>
-    </div>
-  </div>
-
+const app = new PowerCon();
 </body>
 </html>
