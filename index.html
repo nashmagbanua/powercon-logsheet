@@ -248,16 +248,14 @@ recordsHTML() {
 
   // Default category colors
   const defaultColors = {
-    "UTILITIES": "#ef4444",   // red
-    "PROCESS": "#3b82f6",     // blue
-    "BOTTLING": "#f59e0b",    // amber
-    "LVSG 5 LOADS": "#10b981" // emerald
+    "UTILITIES": "#ef4444",
+    "PROCESS": "#3b82f6",
+    "BOTTLING": "#f59e0b",
+    "LVSG 5 LOADS": "#10b981"
   };
 
-  // Use user-customized colors if available
   const colors = this.state.userColors || defaultColors;
 
-  // Text color for contrast
   const getContrast = (hex) => {
     if (!hex) return "#fff";
     hex = hex.replace('#','');
@@ -268,7 +266,6 @@ recordsHTML() {
     return yiq >= 128 ? "#000000" : "#ffffff";
   };
 
-  // Custom display order of equipment
   const customOrder = [
     "Refrigeration System",
     "Clean Steam Generator",
@@ -324,7 +321,7 @@ recordsHTML() {
     <!-- Daily consumption summary -->
     <div class="glass-card p-8 rounded-[2rem] shadow-2xl mb-8 border-b-8 border-emerald-500 text-center">
       <h3 class="text-[9px] font-black uppercase tracking-widest mb-2 opacity-60">Daily Consumption</h3>
-      <div class="text-4xl font-black font-mono-numbers mb-2">${fmt(grandTotal)} <span class="text-[10px] font-sans">kWh</span></div>
+      <div class="text-4xl font-black font-mono-numbers mb-2">${grandTotal} <span class="text-[10px] font-sans">kWh</span></div>
       <div class="flex justify-center items-center gap-2 mt-2">
         <div class="h-[1px] w-4 bg-emerald-500/30"></div>
         <p class="text-[9px] font-black uppercase text-emerald-500">OPERATOR: ${meta.operator || 'UNSPECIFIED'}</p>
@@ -335,13 +332,12 @@ recordsHTML() {
     <!-- Equipment list -->
     <div class="space-y-4">
       ${customOrder.map(name => {
-        // Find the equipment from MOCK_EQUIPMENT (case-insensitive)
         const e = MOCK_EQUIPMENT.find(eq => eq.name.toLowerCase() === name.toLowerCase());
-        if (!e) return ''; // skip if not found
+        if (!e) return '';
 
         const r = this.state.cloudReadings[e.id] || { prev: 0, curr: 0, usage: 0 };
         const catColor = colors[e.loc] || defaultColors[e.loc] || "#3b82f6";
-        const currBg = `${catColor}33`; // semi-transparent
+        const currBg = `${catColor}33`;
         const currText = getContrast(catColor);
 
         return `<div class="glass-card p-4 rounded-2xl flex items-center justify-between" onclick="app.editFromDashboard('${e.id}')">
@@ -350,11 +346,11 @@ recordsHTML() {
             <div class="text-[9px] font-mono-numbers text-white space-y-0.5">
               <div>
                 <span class="opacity-50">Previous:</span>
-                <span class="opacity-70">${fmt(r.prev)}</span>
+                <span class="opacity-70">${r.prev != null ? r.prev : ''}</span>
               </div>
               <div>
                 <span class="font-semibold" style="color:${catColor}">Current:</span>
-                <input type="text" value="${r.curr.toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 3 })}"
+                <input type="text" value="${r.curr != null ? r.curr : ''}"
                   class="px-1.5 py-0.5 rounded font-bold text-[14px] w-24 text-center"
                   style="background-color:${currBg}; color:${currText}"
                   ${this.state.isAdmin ? `onchange="app.saveReading(this.value, '${e.id}')"` : 'readonly'}>
@@ -362,7 +358,7 @@ recordsHTML() {
             </div>
           </div>
           <div class="text-right">
-            <p class="text-[16px] font-mono-numbers font-white text-emerald-600">${fmt(r.usage)}</p>
+            <p class="text-[16px] font-mono-numbers font-white text-emerald-600">${r.usage != null ? r.usage : ''}</p>
           </div>
         </div>`;
       }).join('')}
@@ -387,11 +383,11 @@ recordsHTML() {
     this.state.isSingleEdit = false; 
     this.render(); 
 }
-      async saveReading(curr, prevInput) {
+    async saveReading(curr, prevInput) {
     const eq = MOCK_EQUIPMENT[this.state.currentIndex];
-    const current = parseFloat(parseFloat(curr || 0).toFixed(3));
-    const prev = parseFloat(parseFloat(prevInput || 0).toFixed(3));
-    const usage = parseFloat((current - prev).toFixed(3));
+    const current = parseFloat(curr || 0);   
+    const prev = parseFloat(prevInput || 0); 
+    const usage = current - prev;             
     
     if (current < prev && !confirm("⚠️ Current lower than previous. Save anyway?")) return;
     
